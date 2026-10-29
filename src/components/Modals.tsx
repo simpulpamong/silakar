@@ -121,7 +121,14 @@ function LoadingOverlay() {
           {loading.progress > 0 && <em>{Math.round(loading.progress)}%</em>}
         </h2>
         <p className="loader-sub">{loading.sub}</p>
-        <div className="loader-bar">
+        <div
+          className="loader-bar"
+          role="progressbar"
+          aria-label="Kemajuan proses"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(loading.progress)}
+        >
           <div className="loader-fill" style={{ width: `${loading.progress}%` }} />
         </div>
         {loading.steps.length > 0 && (

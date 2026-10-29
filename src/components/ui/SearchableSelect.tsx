@@ -27,6 +27,7 @@ export default function SearchableSelect({
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = `searchable-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const triggerId = `${listId}-trigger`;
 
   useEffect(() => {
     if (!open) return;
@@ -120,11 +121,12 @@ export default function SearchableSelect({
         </>
       ) : (
         <button
+          id={triggerId}
           type="button"
           className={`searchable-trigger${value ? ' has-value' : ''}`}
           disabled={disabled}
           aria-haspopup="listbox"
-          aria-expanded={false}
+          aria-expanded={open}
           aria-controls={listId}
           onClick={() => setOpen(true)}
         >
