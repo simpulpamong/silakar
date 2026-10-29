@@ -19,6 +19,18 @@ export type { ParsedReport } from '../silakarParser';
 
 /* ── Struktur baris ─────────────────────────────────────────────── */
 
+/** Canonical column order for both report tabs (KEBAKARAN and ODNK). */
+export const REPORT_HEADERS = [
+  'Waktu Submit', 'ID Laporan', 'Kategori', 'Tanggal Kejadian', 'Hari',
+  'Lokasi', 'Latitude', 'Longitude', 'Google Maps', 'Pelapor',
+  'Pemilik / Objek', 'Jumlah Penghuni', 'Korban', 'Penyebab', 'Kronologi',
+  'Tindakan', 'Kerugian', 'Harta Terselamatkan', 'Luas Area', 'Jarak Tempuh',
+  'Estimasi Perjalanan', 'Waktu Laporan', 'Waktu Berangkat', 'Waktu Tiba',
+  'Waktu Mulai', 'Waktu Selesai', 'Waktu Kembali', 'Armada', 'Personel',
+  'Kendala', 'Rincian Kegiatan', 'Narasi Asli', 'Folder Drive', 'Jumlah Foto',
+  'Status', 'Sumber',
+] as const;
+
 export interface PhotoMeta {
   hasGps?: boolean;
   lat?: number | null;
