@@ -162,10 +162,19 @@ export default function PhotoManager({
                   dragOver === index ? ' is-over' : ''
                 }`}
                 draggable={!photo.processing}
+                role="button"
+                tabIndex={photo.processing ? -1 : 0}
+                aria-label={`Buka pratinjau foto ${index + 1}`}
                 onDragStart={event => onDragStart(event, index)}
                 onDragOver={event => onDragOver(event, index)}
                 onDrop={event => onDrop(event, index)}
                 onDragEnd={onDragEnd}
+                onKeyDown={event => {
+                  if ((event.key === 'Enter' || event.key === ' ') && !photo.processing) {
+                    event.preventDefault();
+                    openViewer(index);
+                  }
+                }}
                 onClick={() => {
                   if (!photo.processing) openViewer(index);
                 }}

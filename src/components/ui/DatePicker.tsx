@@ -102,10 +102,9 @@ export default function DatePicker({
         <span>{value ? formatLabel(value) : 'Pilih tanggal'}</span>
         <span className="date-tools">
           {value && !required && (
-            <span
+            <button
+              type="button"
               className="date-clear"
-              role="button"
-              tabIndex={0}
               aria-label="Kosongkan tanggal"
               onClick={event => {
                 event.stopPropagation();
@@ -122,7 +121,7 @@ export default function DatePicker({
               }}
             >
               <X aria-hidden="true" />
-            </span>
+            </button>
           )}
           <ChevronRight aria-hidden="true" className="date-caret" />
         </span>
