@@ -41,7 +41,8 @@ function normalizeDay(value: string): string {
 
 export interface ParsedReport {
   nomorSpt: string; lokasi: string; hari: string; tanggal: string;
-  identitas: string; pelapor: string; pemilik: string; penghuni: string;
+  identitas: string; pelapor: string; pemilik: string; objek: string; penghuni: string;
+  latitude: string; longitude: string; googleMaps: string;
   korban: string; penyebab: string; kronologi: string; tindakan: string;
   kerugian: string; hartaTerselamatkan: string; luasArea: string;
   jarakTempuh: string; estimasiPerjalanan: string; waktuLaporan: string;
@@ -58,8 +59,8 @@ export function parseReport(rawText: string): ParsedReport {
     /(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i,
   ]);
   const dayFromDate = first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
-  const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['JARAK', 'ESTIMAS', 'PEMBERI', 'PELAPOR', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN']);
-  const personil = section(text, ['PERSONIL(?:\s+YANG\s+TERLIBAT)?'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN']);
+  const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['GPS', 'JARAK', 'ESTIMAS', 'PEMBERI', 'PELAPOR', 'PEMILIK', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN']);
+  const personil = section(text, ['PERSONIL(?:\s+YANG\s+TERLIBAT)?'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN', 'KENDALA']);
   const regu = first(text, [
     /Regu\s+([A-Z])\s+Damkar/i,
     /Komandan\s+Regu\s+([A-Z])/i,
@@ -74,7 +75,8 @@ export function parseReport(rawText: string): ParsedReport {
   const parsed: ParsedReport = {
     nomorSpt: first(text, [/Nomor\s*SPT\s*[:：]?\s*([^\n]+)/i]), lokasi, hari: normalizeDay(dayFromDate || first(text, [/\bHari\b\s*[:：]?\s*([A-Za-zÀ-ÿ]+)/i])),
     tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+\s*,?\s*/i, '').trim(), identitas,
-    pelapor: section(text, ['PEMBERI INFORMASI.*'], stop), pemilik: section(text, ['PEMILIK'], stop),
+    objek: section(text, ['OBJEK'], stop), latitude: first(text, [/GPS\s*([-+]?\d+(?:\.\d+)?)\s*S/i]), longitude: first(text, [/GPS[^\n,]*,\s*([-+]?\d+(?:\.\d+)?)\s*E/i]), googleMaps: '',
+    pelapor: section(text, ['PEMBERI INFORMASI.*', 'PELAPOR(?:\s*/\s*PEMOHON)?'], stop), pemilik: section(text, ['PEMILIK'], stop),
     penghuni: section(text, ['JUMLAH PENGHUNI'], stop), korban: section(text, ['KORBAN'], stop),
     penyebab: section(text, ['PENYEBAB'], stop), kronologi: section(text, ['KRONOLOGI'], stop),
     tindakan: section(text, ['TINDAKAN'], stop), kerugian: section(text, ['PERKIRAAN KERUGIAN', 'KERUGIAN'], stop),
@@ -86,6 +88,9 @@ export function parseReport(rawText: string): ParsedReport {
     kendala: section(text, ['KENDALA'], stop), rincianKegiatan: section(text, ['RINCIAN KEGIATAN'], stop),
     keterangan: section(text, ['KRONOLOGI'], ['PERKIRAAN KERUGIAN', 'TINDAKAN', 'RINCIAN KEGIATAN', 'DOKUMENTASI']), missing: [],
   };
+  parsed.googleMaps = parsed.latitude && parsed.longitude ? `https://www.google.com/maps?q=${parsed.latitude},${parsed.longitude}` : '';
+  if (!parsed.pelapor && parsed.identitas) parsed.pelapor = parsed.identitas;
+  if (!parsed.identitas && parsed.objek) parsed.identitas = parsed.objek;
   parsed.missing = REQUIRED_FIELDS.filter((field) => !parsed[field]);
   return parsed;
 }
