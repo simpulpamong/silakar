@@ -46,7 +46,9 @@ export interface ProcessPhotoOptions {
   maxEdge?: number;
 }
 
-const MAX_EDGE = 2400;
+// 2048px keeps report photos sharp while reducing canvas memory and JPEG work
+// substantially on mobile devices (compared with the previous 2400px cap).
+const MAX_EDGE = 2048;
 const MIN_QUALITY = 0.32;
 const BASE_QUALITY = 0.9;
 
