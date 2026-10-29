@@ -27,8 +27,7 @@ const greatVibes = Great_Vibes({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Keep pinch-to-zoom available for users who need larger text.
   viewportFit: 'cover',
   themeColor: '#080d18',
 };
