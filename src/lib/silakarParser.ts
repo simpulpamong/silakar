@@ -55,7 +55,7 @@ export interface ParsedReport {
 export function parseReport(rawText: string): ParsedReport {
   const text = cleanReportText(rawText);
   const tanggalFull = first(text, [
-    /HARI\s*(?:DAN\s+)?TANGGAL(?:\s+PELAKSANAANNYA|\s+PELAKSANAAN)?\s*[:：]?\s*([A-Za-zÀ-ÿ]+\s*,?\s*\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4})/i,
+    /HARI\s*(?:DAN\s+)?TANGGAL(?:\s+PELAKSANAANNYA|\s+PELAKSANAAN)?\s*[:：]?\s*([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4})/i,
     /(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i,
   ]);
   const dayFromDate = first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
