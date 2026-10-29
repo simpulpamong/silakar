@@ -38,7 +38,12 @@ function section(text: string, labels: string[], stops: string[]): string {
   return first(text, [new RegExp(`(?:^|\\n)\\s*(?:[•.\\-]\\s*)?(?:${label})\\s*[:：]?\\s*([\\s\\S]*?)(?=\\n\\s*(?:${stop})\\b|$)`, 'im')]);
 }
 function normalizeDay(value: string): string {
-  return value.replace(/,.*$/, '').trim();
+  const day = value.replace(/,.*$/, '').trim().toLowerCase().replace(/[’']/g, '');
+  const names: Record<string, string> = {
+    senin: 'Senin', selasa: 'Selasa', rabu: 'Rabu', kamis: 'Kamis',
+    jumat: 'Jumat', sabtu: 'Sabtu', minggu: 'Minggu',
+  };
+  return names[day] || value.replace(/,.*$/, '').trim();
 }
 
 export interface ParsedReport {
@@ -69,8 +74,8 @@ export function parseReport(rawText: string): ParsedReport {
     /\b(Regu\s+[A-Z])\b/i,
   ]);
   const commander = first(text, [
+    /YANG\s+MELAPORKAN\s*[:：]?\s*_*\s*([A-Za-zÀ-ÿ .,'-]+?)\s*_?\s*Komandan\s+Regu/i,
     /\*?([A-ZÀ-Ý][A-ZÀ-Ý .,'-]{2,})\*?\s*Komandan\s+Regu/i,
-    /YANG\s+MELAPORKAN\s*[:：]?\s*([A-Za-zÀ-ÿ .,'-]+)/i,
   ]);
   const identitas = section(text, ['OBJEK', 'PEMILIK(?:\s+NYA)?', 'IDENTITAS(?:\s*/\s*NAMA)?', 'PELAPOR(?:\s*/\s*PEMOHON)?'], ['JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'KERUGIAN', 'RINCIAN', 'PERSONIL']);
   const stop = ['JARAK TEMPUH', 'ESTIMASI WAKTU PERJALANAN', 'PEMBERI INFORMASI', 'PELAPOR / PEMOHON', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI RUMAH', 'JUMLAH PENGHUNI', 'LUAS AREA', 'AREAL YANG TERBAKAR', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'PERKIRAAN KERUGIAN', 'KERUGIAN', 'PERKIRAAN HARTA BENDA', 'HARTA', 'TINDAKAN', 'RINCIAN KEGIATAN', 'JUMLAH UNIT KENDARAAN', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
@@ -85,11 +90,15 @@ export function parseReport(rawText: string): ParsedReport {
     hartaTerselamatkan: section(text, ['PERKIRAAN HARTA.*TERSELAMATKAN'], stop), luasArea: section(text, ['LUAS AREA', 'AREAL YANG TERBAKAR'], stop),
     jarakTempuh: section(text, ['JARAK TEMPUH'], stop), estimasiPerjalanan: section(text, ['ESTIMASI WAKTU PERJALANAN', 'ESTIMASI WAKTU'], stop),
     waktuLaporan: section(text, ['LAPORAN MASUK'], stop), waktuBerangkat: section(text, ['WAKTU BERANGKAT'], stop), waktuTiba: section(text, ['TIBA DI LOKASI', 'TIBA DILOKASI'], stop),
-    waktuMulai: section(text, ['MULAI KEGIATAN'], stop), waktuSelesai: section(text, ['SELESAI KEGIATAN'], stop), waktuKembali: section(text, ['TIBA KEMBALI'], stop),
-    armada: section(text, ['JUMLAH UNIT KENDARAAN'], ['PERSONIL', 'KENDALA', 'DOKUMENTASI']), personil, danru: regu ? `Regu ${regu.replace(/^Regu\s+/i, '')}` : '', namaDanru: commander,
+    waktuMulai: section(text, ['MULAI KEGIATAN'], stop), waktuSelesai: section(text, ['SELESAI KEGIATAN'], stop), waktuKembali: section(text, ['TIBA KEMBALI DI MAKO', 'TIBA KEMBALI'], stop),
+    armada: section(text, ['JUMLAH UNIT KENDARAAN'], ['KENDALA', 'PERSONIL', 'DOKUMENTASI']), personil, danru: regu ? `Regu ${regu.replace(/^Regu\s+/i, '')}` : '', namaDanru: commander,
     kendala: section(text, ['KENDALA'], stop), rincianKegiatan: section(text, ['RINCIAN KEGIATAN'], stop),
     keterangan: section(text, ['KRONOLOGI'], ['PERKIRAAN KERUGIAN', 'TINDAKAN', 'RINCIAN KEGIATAN', 'DOKUMENTASI']), missing: [],
   };
+  parsed.pelapor = parsed.pelapor.replace(/^.*?\b(?:PELAPOR\s*\/\s*PEMOHON|PEMOHON)\s*[:：]?\s*/i, '').trim();
+  parsed.personil = parsed.personil.replace(/^.*?\bPERSONIL(?:\s+YANG\s+TERLIBAT)?\s*[:：]?\s*/i, '').trim();
+  parsed.armada = parsed.armada.replace(/^.*?\bJUMLAH\s+UNIT\s+KENDARAK?AN\s+YANG\s+DIGUNAKAN\s*[:：]?\s*/i, '').trim();
+  parsed.waktuKembali = parsed.waktuKembali.replace(/^.*?\bDI\s+MAKO\s*[:：]?\s*/i, '').trim();
   parsed.googleMaps = parsed.latitude && parsed.longitude ? `https://www.google.com/maps?q=${parsed.latitude},${parsed.longitude}` : '';
   if (!parsed.pelapor && parsed.identitas) parsed.pelapor = parsed.identitas;
   if (!parsed.identitas && parsed.objek) parsed.identitas = parsed.objek;
