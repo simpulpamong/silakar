@@ -8,14 +8,16 @@ export function generateStaticParams() {
   return CATEGORIES.map(category => ({ category: category.slug }));
 }
 
-export function generateMetadata({ params }: { params: { category: string } }): Metadata {
-  const category = getCategoryBySlug(params.category);
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
+  const { category: slug } = await params;
+  const category = getCategoryBySlug(slug);
   if (!category) return { title: 'Kategori tidak ditemukan' };
   return { title: `SILAKAR — ${category.name}`, description: category.description };
 }
 
-export default function CategoryPage({ params }: { params: { category: string } }) {
-  const category = getCategoryBySlug(params.category);
+export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category: slug } = await params;
+  const category = getCategoryBySlug(slug);
   if (!category) notFound();
 
   return (
