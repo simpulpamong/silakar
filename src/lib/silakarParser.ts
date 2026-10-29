@@ -31,8 +31,10 @@ function first(text: string, patterns: RegExp[]): string {
   return '';
 }
 function section(text: string, labels: string[], stops: string[]): string {
-  const label = labels.join('|');
-  const stop = stops.join('|');
+  // Match label terpanjang dahulu agar JARAK TEMPUH tidak dipotong menjadi JARAK,
+  // dan PELAPOR tidak salah mengambil bagian dari PEMILIK.
+  const label = [...labels].sort((a, b) => b.length - a.length).join('|');
+  const stop = [...stops].sort((a, b) => b.length - a.length).join('|');
   return first(text, [new RegExp(`(?:^|\\n)\\s*(?:[•.\\-]\\s*)?(?:${label})\\s*[:：]?\\s*([\\s\\S]*?)(?=\\n\\s*(?:${stop})\\b|$)`, 'im')]);
 }
 function normalizeDay(value: string): string {
@@ -59,7 +61,7 @@ export function parseReport(rawText: string): ParsedReport {
     /(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i,
   ]);
   const dayFromDate = first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
-  const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['GPS', 'JARAK', 'ESTIMAS', 'PEMBERI', 'PELAPOR', 'PEMILIK', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN']);
+  const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['GPS', 'JARAK TEMPUH', 'ESTIMASI WAKTU', 'PEMBERI INFORMASI', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN KEGIATAN']);
   const personil = section(text, ['PERSONIL(?:\s+YANG\s+TERLIBAT)?'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN', 'KENDALA']);
   const regu = first(text, [
     /Regu\s+([A-Z])\s+Damkar/i,
@@ -71,17 +73,17 @@ export function parseReport(rawText: string): ParsedReport {
     /YANG\s+MELAPORKAN\s*[:：]?\s*([A-Za-zÀ-ÿ .,'-]+)/i,
   ]);
   const identitas = section(text, ['OBJEK', 'PEMILIK(?:\s+NYA)?', 'IDENTITAS(?:\s*/\s*NAMA)?', 'PELAPOR(?:\s*/\s*PEMOHON)?'], ['JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'KERUGIAN', 'RINCIAN', 'PERSONIL']);
-  const stop = ['JARAK', 'ESTIMAS', 'PEMBERI', 'PELAPOR', 'PEMILIK', 'JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'KERUGIAN', 'HARTA', 'TINDAKAN', 'RINCIAN', 'ARMADA', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
+  const stop = ['JARAK TEMPUH', 'ESTIMASI WAKTU PERJALANAN', 'PEMBERI INFORMASI', 'PELAPOR / PEMOHON', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI RUMAH', 'JUMLAH PENGHUNI', 'LUAS AREA', 'AREAL YANG TERBAKAR', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'PERKIRAAN KERUGIAN', 'KERUGIAN', 'PERKIRAAN HARTA BENDA', 'HARTA', 'TINDAKAN', 'RINCIAN KEGIATAN', 'JUMLAH UNIT KENDARAAN', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
   const parsed: ParsedReport = {
     nomorSpt: first(text, [/Nomor\s*SPT\s*[:：]?\s*([^\n]+)/i]), lokasi, hari: normalizeDay(dayFromDate || first(text, [/\bHari\b\s*[:：]?\s*([A-Za-zÀ-ÿ]+)/i])),
-    tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+\s*,?\s*/i, '').trim(), identitas,
+    tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*/i, '').trim(), identitas,
     objek: section(text, ['OBJEK'], stop), latitude: first(text, [/GPS\s*([-+]?\d+(?:\.\d+)?)\s*S/i]), longitude: first(text, [/GPS[^\n,]*,\s*([-+]?\d+(?:\.\d+)?)\s*E/i]), googleMaps: '',
-    pelapor: section(text, ['PEMBERI INFORMASI.*', 'PELAPOR(?:\s*/\s*PEMOHON)?'], stop), pemilik: section(text, ['PEMILIK'], stop),
-    penghuni: section(text, ['JUMLAH PENGHUNI'], stop), korban: section(text, ['KORBAN'], stop),
+    pelapor: section(text, ['PEMBERI INFORMASI\s*\(\s*PELAPOR\s*/\s*PEMOHON\s*\)', 'PELAPOR\s*/\s*PEMOHON', 'PELAPOR'], stop), pemilik: section(text, ['PEMILIK'], stop),
+    penghuni: section(text, ['JUMLAH PENGHUNI RUMAH YANG TERDAMPAK', 'JUMLAH PENGHUNI'], stop), korban: section(text, ['KORBAN'], stop),
     penyebab: section(text, ['PENYEBAB'], stop), kronologi: section(text, ['KRONOLOGI'], stop),
     tindakan: section(text, ['TINDAKAN'], stop), kerugian: section(text, ['PERKIRAAN KERUGIAN', 'KERUGIAN'], stop),
     hartaTerselamatkan: section(text, ['PERKIRAAN HARTA.*TERSELAMATKAN'], stop), luasArea: section(text, ['LUAS AREA', 'AREAL YANG TERBAKAR'], stop),
-    jarakTempuh: section(text, ['JARAK TEMPUH'], stop), estimasiPerjalanan: section(text, ['ESTIMASI WAKTU'], stop),
+    jarakTempuh: section(text, ['JARAK TEMPUH'], stop), estimasiPerjalanan: section(text, ['ESTIMASI WAKTU PERJALANAN', 'ESTIMASI WAKTU'], stop),
     waktuLaporan: section(text, ['LAPORAN MASUK'], stop), waktuBerangkat: section(text, ['WAKTU BERANGKAT'], stop), waktuTiba: section(text, ['TIBA DI LOKASI', 'TIBA DILOKASI'], stop),
     waktuMulai: section(text, ['MULAI KEGIATAN'], stop), waktuSelesai: section(text, ['SELESAI KEGIATAN'], stop), waktuKembali: section(text, ['TIBA KEMBALI'], stop),
     armada: section(text, ['JUMLAH UNIT KENDARAAN'], ['PERSONIL', 'KENDALA', 'DOKUMENTASI']), personil, danru: regu ? `Regu ${regu.replace(/^Regu\s+/i, '')}` : '', namaDanru: commander,
