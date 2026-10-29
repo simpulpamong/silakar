@@ -116,12 +116,30 @@ export async function withRetry<T>(task: () => Promise<T>, attempts = 2, delayMs
       return await task();
     } catch (error) {
       lastError = error;
-      if (attempt < attempts - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1)));
-      }
+      // Jangan mengulang validation/4xx/auth errors: pada operasi upload/submit,
+      // retry buta dapat membuat file atau baris Sheet ganda.
+      const status = typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: unknown }).status)
+        : 0;
+      const message = error instanceof Error ? error.message : String(error);
+      const nonTransient = (status >= 400 && status < 500) || /invalid|unauthorized|forbidden|payload|lengkap|kosong/i.test(message);
+      if (nonTransient || attempt >= attempts - 1) break;
+      const jitter = Math.round(Math.random() * Math.min(delayMs, 250));
+      await new Promise(resolve => setTimeout(resolve, delayMs * (attempt + 1) + jitter));
     }
   }
   throw lastError;
+}
+
+/** Tambah waktu untuk jaringan seluler lambat agar upload besar tidak gagal prematur. */
+export function adaptiveTimeout(baseMs: number): number {
+  if (typeof navigator === 'undefined') return baseMs;
+  const connection = (navigator as Navigator & {
+    connection?: { effectiveType?: string; saveData?: boolean };
+  }).connection;
+  if (connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g') return baseMs * 2;
+  if (connection?.effectiveType === '3g' || connection?.saveData) return Math.round(baseMs * 1.5);
+  return baseMs;
 }
 
 /** Batas konkurensi menyesuaikan perangkat agar HP kelas bawah tetap lancar. */
