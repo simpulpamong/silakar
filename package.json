@@ -4,13 +4,13 @@
   "private": true,
   "description": "Sistem Laporan Kebakaran dan Non-Kebakaran Kabupaten Ponorogo",
   "engines": {
-    "node": ">=18.17.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint && npm run build",
     "seed:production": "node scripts/seed-production.mjs"
@@ -23,10 +23,10 @@
     "googleapis": "^182.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
-    "next": "^14.2.3",
+    "next": "^16.4.3",
     "qrcode": "^1.5.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "sharp": "^0.35.4",
     "tesseract.js": "^7.0.0"
   },
@@ -37,8 +37,8 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.6.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.3",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.3",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "typescript": "^5"

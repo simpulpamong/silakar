@@ -10,11 +10,6 @@ const nextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
 
-  eslint: {
-    // Linting dijalankan terpisah lewat `npm run lint`.
-    ignoreDuringBuilds: true,
-  },
-
   typescript: {
     // `npm run typecheck` menjadi gerbang wajib sebelum deploy.
     ignoreBuildErrors: true,

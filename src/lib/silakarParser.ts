@@ -41,8 +41,14 @@ function normalizeDay(value: string): string {
 
 export interface ParsedReport {
   nomorSpt: string; lokasi: string; hari: string; tanggal: string;
-  identitas: string; personil: string; danru: string; namaDanru: string;
-  keterangan: string; missing: ReportField[];
+  identitas: string; pelapor: string; pemilik: string; penghuni: string;
+  korban: string; penyebab: string; kronologi: string; tindakan: string;
+  kerugian: string; hartaTerselamatkan: string; luasArea: string;
+  jarakTempuh: string; estimasiPerjalanan: string; waktuLaporan: string;
+  waktuBerangkat: string; waktuTiba: string; waktuMulai: string;
+  waktuSelesai: string; waktuKembali: string; armada: string;
+  personil: string; danru: string; namaDanru: string; kendala: string;
+  rincianKegiatan: string; keterangan: string; missing: ReportField[];
 }
 
 export function parseReport(rawText: string): ParsedReport {
@@ -64,13 +70,21 @@ export function parseReport(rawText: string): ParsedReport {
     /YANG\s+MELAPORKAN\s*[:：]?\s*([A-Za-zÀ-ÿ .,'-]+)/i,
   ]);
   const identitas = section(text, ['OBJEK', 'PEMILIK(?:\s+NYA)?', 'IDENTITAS(?:\s*/\s*NAMA)?', 'PELAPOR(?:\s*/\s*PEMOHON)?'], ['JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'KERUGIAN', 'RINCIAN', 'PERSONIL']);
+  const stop = ['JARAK', 'ESTIMAS', 'PEMBERI', 'PELAPOR', 'PEMILIK', 'JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'KERUGIAN', 'HARTA', 'TINDAKAN', 'RINCIAN', 'ARMADA', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
   const parsed: ParsedReport = {
-    nomorSpt: first(text, [/Nomor\s*SPT\s*[:：]?\s*([^\n]+)/i]),
-    lokasi, hari: normalizeDay(dayFromDate || first(text, [/\bHari\b\s*[:：]?\s*([A-Za-zÀ-ÿ]+)/i])),
-    tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+\s*,?\s*/i, '').trim(),
-    identitas, personil, danru: regu ? `Regu ${regu.replace(/^Regu\s+/i, '')}` : '', namaDanru: commander,
-    keterangan: section(text, ['KRONOLOGI', 'RINCIAN KEGIATAN', 'PELAKSANAAN'], ['JUMLAH ARMADA', 'KENDALA', 'PERSONIL', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN']),
-    missing: [],
+    nomorSpt: first(text, [/Nomor\s*SPT\s*[:：]?\s*([^\n]+)/i]), lokasi, hari: normalizeDay(dayFromDate || first(text, [/\bHari\b\s*[:：]?\s*([A-Za-zÀ-ÿ]+)/i])),
+    tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+\s*,?\s*/i, '').trim(), identitas,
+    pelapor: section(text, ['PEMBERI INFORMASI.*'], stop), pemilik: section(text, ['PEMILIK'], stop),
+    penghuni: section(text, ['JUMLAH PENGHUNI'], stop), korban: section(text, ['KORBAN'], stop),
+    penyebab: section(text, ['PENYEBAB'], stop), kronologi: section(text, ['KRONOLOGI'], stop),
+    tindakan: section(text, ['TINDAKAN'], stop), kerugian: section(text, ['PERKIRAAN KERUGIAN', 'KERUGIAN'], stop),
+    hartaTerselamatkan: section(text, ['PERKIRAAN HARTA.*TERSELAMATKAN'], stop), luasArea: section(text, ['LUAS AREA', 'AREAL YANG TERBAKAR'], stop),
+    jarakTempuh: section(text, ['JARAK TEMPUH'], stop), estimasiPerjalanan: section(text, ['ESTIMASI WAKTU'], stop),
+    waktuLaporan: section(text, ['LAPORAN MASUK'], stop), waktuBerangkat: section(text, ['WAKTU BERANGKAT'], stop), waktuTiba: section(text, ['TIBA DI LOKASI', 'TIBA DILOKASI'], stop),
+    waktuMulai: section(text, ['MULAI KEGIATAN'], stop), waktuSelesai: section(text, ['SELESAI KEGIATAN'], stop), waktuKembali: section(text, ['TIBA KEMBALI'], stop),
+    armada: section(text, ['JUMLAH UNIT KENDARAAN'], ['PERSONIL', 'KENDALA', 'DOKUMENTASI']), personil, danru: regu ? `Regu ${regu.replace(/^Regu\s+/i, '')}` : '', namaDanru: commander,
+    kendala: section(text, ['KENDALA'], stop), rincianKegiatan: section(text, ['RINCIAN KEGIATAN'], stop),
+    keterangan: section(text, ['KRONOLOGI'], ['PERKIRAAN KERUGIAN', 'TINDAKAN', 'RINCIAN KEGIATAN', 'DOKUMENTASI']), missing: [],
   };
   parsed.missing = REQUIRED_FIELDS.filter((field) => !parsed[field]);
   return parsed;

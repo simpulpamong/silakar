@@ -64,11 +64,8 @@ export function buildReportRow(input: ReportRowInput): (string | number)[] {
   // Selaraskan persis dengan REPORT_HEADERS di Apps Script (36 kolom).
   return [
     formatWib(input.createdAt ?? new Date()), parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
-    parsed.tanggal || '-', parsed.hari || '-', parsed.lokasi || '-',
-    '', '', '', parsed.identitas || '-', parsed.identitas || '-', '', '', '',
-    parsed.keterangan || '', '', '', '', '', '', '', '', '', '', '', '',
-    parsed.danru || '-', parsed.personil || '-', '', parsed.keterangan || '',
-    parsed.keterangan || '', input.folderUrl || '', photos.length, 'DITERIMA', 'SILAKAR',
+    parsed.tanggal || '-', parsed.hari || '-', parsed.lokasi || '-', '', '', parsed.lokasi ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsed.lokasi)}` : '-',
+    parsed.pelapor || '-', parsed.pemilik || '-', parsed.penghuni || '-', parsed.korban || '-', parsed.penyebab || '-', parsed.kronologi || '-', parsed.tindakan || '-', parsed.kerugian || '-', parsed.hartaTerselamatkan || '-', parsed.luasArea || '-', parsed.jarakTempuh || '-', parsed.estimasiPerjalanan || '-', parsed.waktuLaporan || '-', parsed.waktuBerangkat || '-', parsed.waktuTiba || '-', parsed.waktuMulai || '-', parsed.waktuSelesai || '-', parsed.waktuKembali || '-', parsed.armada || '-', parsed.personil || '-', parsed.kendala || '-', parsed.rincianKegiatan || '-', parsed.kronologi || '-', input.folderUrl || '', photos.length, 'DITERIMA', 'SILAKAR',
   ];
 }
 
