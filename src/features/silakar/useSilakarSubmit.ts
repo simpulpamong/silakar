@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useApp } from '../core/AppContext';
-import { adaptiveConcurrency, apiFetch, parallelLimit, withRetry } from '../core/apiClient';
+import { adaptiveConcurrency, adaptiveTimeout, apiFetch, parallelLimit, withRetry } from '../core/apiClient';
 import { formatExifTime } from '../core/exif';
 import { esc } from '@/lib/html';
 import { MAX_PHOTOS } from '@/lib/constants';
@@ -97,7 +97,7 @@ export function useSilakarSubmit() {
             () =>
               apiFetch<{ linkFile: string; namaFile: string; folderUrl: string }>('/api/silakar', {
                 method: 'POST',
-                timeout: 80_000,
+                timeout: adaptiveTimeout(80_000),
                 body: {
                   action: 'uploadFoto',
                   data: {
@@ -204,7 +204,7 @@ export function useSilakarSubmit() {
       setBusy(false);
     }
   }, [
-    busy, validate, photos, reportText, activeDraftId, setActiveDraftId, setReportText,
+    busy, validate, photos, reportText, scope, activeDraftId, setActiveDraftId, setReportText,
     showAlert, startLoading, setProgress, stopLoading, resetReport,
   ]);
 
