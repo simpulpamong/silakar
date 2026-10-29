@@ -41,6 +41,7 @@ export interface ReportRowInput {
   folderUrl?: string;
   createdAt?: Date;
   kategori?: 'kebakaran' | 'odnk';
+  rawText?: string;
 }
 
 export interface PhotoRowInput {
@@ -65,7 +66,7 @@ export function buildReportRow(input: ReportRowInput): (string | number)[] {
   return [
     formatWib(input.createdAt ?? new Date()), parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
     parsed.tanggal || '-', parsed.hari || '-', parsed.lokasi || '-', parsed.latitude || '-', parsed.longitude || '-', parsed.googleMaps || '-',
-    parsed.pelapor || '-', (parsed.pemilik || parsed.objek) || '-', parsed.penghuni || '-', parsed.korban || '-', parsed.penyebab || '-', parsed.kronologi || '-', parsed.tindakan || '-', parsed.kerugian || '-', parsed.hartaTerselamatkan || '-', parsed.luasArea || '-', parsed.jarakTempuh || '-', parsed.estimasiPerjalanan || '-', parsed.waktuLaporan || '-', parsed.waktuBerangkat || '-', parsed.waktuTiba || '-', parsed.waktuMulai || '-', parsed.waktuSelesai || '-', parsed.waktuKembali || '-', parsed.armada || '-', parsed.personil || '-', parsed.kendala || '-', parsed.rincianKegiatan || '-', parsed.kronologi || '-', input.folderUrl || '', photos.length, 'DITERIMA', 'SILAKAR',
+    parsed.pelapor || '-', (parsed.pemilik || parsed.objek) || '-', parsed.penghuni || '-', parsed.korban || '-', parsed.penyebab || '-', parsed.kronologi || '-', parsed.tindakan || '-', parsed.kerugian || '-', parsed.hartaTerselamatkan || '-', parsed.luasArea || '-', parsed.jarakTempuh || '-', parsed.estimasiPerjalanan || '-', parsed.waktuLaporan || '-', parsed.waktuBerangkat || '-', parsed.waktuTiba || '-', parsed.waktuMulai || '-', parsed.waktuSelesai || '-', parsed.waktuKembali || '-', parsed.armada || '-', parsed.personil || '-', parsed.kendala || '-', parsed.rincianKegiatan || '-', input.rawText || '-', input.folderUrl || '', photos.length, 'DITERIMA', 'SILAKAR',
   ];
 }
 

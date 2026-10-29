@@ -121,7 +121,7 @@ async function submitLaporan(body: SilakarBody) {
   const folderUrl = str(body.data?.folderUrl, 500);
 
   await saveReportWithPhotos(
-    { parsed, photos: links, folderUrl, kategori: body.data?.kategori },
+    { parsed, photos: links, folderUrl, kategori: body.data?.kategori, rawText: laporan },
     links.map(photo => ({
       idLaporan: str(body.data?.reportId, 100),
       kategori: body.data?.kategori,
