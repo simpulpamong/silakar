@@ -202,7 +202,9 @@ export function AppProvider({
   const readyRef = useRef(false);
   const textSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const photosRef = useRef<PhotoData[]>([]);
-  photosRef.current = photos;
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
 
   /* ── Pemuatan awal (idempoten, aman untuk StrictMode) ─────────── */
   useEffect(() => {
@@ -341,7 +343,9 @@ export function AppProvider({
      satu kali lagi tepat setelah mount — kalau tanpa penjaga, sesi yang
      baru saja dipulihkan tertimpa isian kosong. */
   const latestSession = useRef({ scope, report, location, coords });
-  latestSession.current = { scope, report, location, coords };
+  useEffect(() => {
+    latestSession.current = { scope, report, location, coords };
+  }, [scope, report, location, coords]);
 
   useEffect(() => {
     const flush = () => {
