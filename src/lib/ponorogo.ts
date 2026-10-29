@@ -1,0 +1,25 @@
+export const desaPonorogo: Record<string, string[]> = {
+  Ngrayun: ['Baosan Kidul', 'Wonodadi', 'Sendang', 'Mrayan', 'Binade', 'Baosan Lor', 'Ngrayun', 'Temon', 'Cepoko', 'Gedangan'],
+  Slahung: ['Tugurejo', 'Senepo', 'Slahung', 'Caluk', 'Broto', 'Menggare', 'Kambeng', 'Wates', 'Ngilo-ilo', 'Duri', 'Ngloning', 'Plancungan', 'Galak', 'Simo', 'Crabak', 'Mojopitu', 'Gundik', 'Nailan', 'Gombang', 'Janti'],
+  Bungkal: ['Koripan', 'Bekare', 'Nambak', 'Kalisat', 'Pager', 'Belang', 'Bungkal', 'Ketonggo', 'Kunti', 'Bancar', 'Padas', 'Sambilawang', 'Kwajon', 'Bediwetan', 'Bedikulon'],
+  Sambit: ['Gajah', 'Wringinanom', 'Ngadisanan', 'Maguwan', 'Nglewan', 'Bedingin', 'Bancangan', 'Campurejo', 'Campursari', 'Sambit', 'Besuki', 'Wilangan', 'Bangsal', 'Kemuning', 'Jrakah'],
+  Sawoo: ['Pangkal', 'Tumpak Pelem', 'Tempuran', 'Sriti', 'Temon', 'Sawoo', 'Prayungan', 'Tugurejo', 'Grogol', 'Ketro', 'Kori', 'Bondrang', 'Ngindeng'],
+  Sooko: ['Ngadirojo', 'Sooko', 'Bedoho'],
+  Pudak: ['Banjarjo', 'Pudak Wetan', 'Pudak Kulon', 'Krisik', 'Tambang', 'Bareng'],
+  Pulung: ['Karangpatihan', 'Tegalrejo', 'Wagirkidul', 'Singgahan', 'Patik', 'Pulung Merdiko', 'Sidoharjo', 'Wotan', 'Plunturan', 'Pomahan', 'Kesugihan', 'Serag', 'Wayang', 'Bekiring', 'Banaran'],
+  Mlarak: ['Candi', 'Totokan', 'Siwalan', 'Joresan', 'Nglumpang', 'Gontor', 'Gandu', 'Jabung', 'Bajang', 'Mlarak', 'Serangan', 'Kaponan'],
+  Siman: ['Demangan', 'Ngabar', 'Madusari', 'Beton', 'Sekaran', 'Brahu', 'Sawuh', 'Jarak', 'Tranjang', 'Pijeran', 'Manuk', 'Siman', 'Patihan Kidul', 'Ronosentanan', 'Tajug', 'Ronowijayan', 'Mangunsuman'],
+  Jetis: ['Ngasinan', 'Kutuk Kulon', 'Kutuwetan', 'Kradenan', 'Mojomati', 'Coper', 'Mojorejo', 'Karanggebang', 'Jetis', 'Tegalsari', 'Wonoketro', 'Josari', 'Turi', 'Winong'],
+  Balong: ['Pandak', 'Bulukidul', 'Bulak', 'Karangpatihan', 'Sumberejo', 'Ngraket', 'Dadapan', 'Singkil', 'Karangan', 'Bajang', 'Balong', 'Jalen', 'Karangmojo', 'Sedarat', 'Purworejo', 'Tatung', 'Ngampel'],
+  Kauman: ['Tegalombo', 'Nongkodono', 'Sukosari', 'Ngrandu', 'Nglarangan', 'Bringin', 'Pengkol', 'Gabel', 'Ciluk', 'Semanding', 'Tosanan', 'Maron', 'Somoroto', 'Plosojenar', 'Carat', 'Kauman'],
+  Jambon: ['Jonggol', 'Poko', 'Bringinan', 'Sendang', 'Karanglo Kidul', 'Bulu Lor', 'Jambon', 'Pulosari', 'Menang', 'Srandil', 'Sidoharjo'],
+  Badegan: ['Dayakan', 'Karangan', 'Tanjunggunung', 'Karangjoho', 'Tanjungrejo', 'Bandaralim', 'Kapuran', 'Badegan', 'Watubonang', 'Biting'],
+  Sampung: ['Gelangkulon', 'Karang Waluh', 'Glinggang', 'Carangrejo', 'Kunti', 'Pagerukir', 'Pohijo', 'Jenangan', 'Sampung', 'Ringinputih'],
+  Sukorejo: ['Morosari', 'Sragi', 'Kalimalang', 'Karanglolor', 'Gandukepuh', 'Nambangrejo', 'Lengkong', 'Golan', 'Bangunrejo', 'Sukorejo', 'Nampan', 'Kranggan', 'Gelanglor', 'Sidorejo', 'Gegeran', 'Prajegan', 'Kedungbanteng'],
+  Ponorogo: ['Paju', 'Brotonegaran', 'Pakunden', 'Kepatihan', 'Surodikraman', 'Purbosuman', 'Tonatan', 'Bangunsari', 'Taman Arum', 'Kauman', 'Tambakbayan', 'Pinggirsari', 'Mangkujayan', 'Banyudono', 'Nologaten', 'Cokromenggalan', 'Keniten', 'Jingglong', 'Beduri'],
+  Babadan: ['Kertosari', 'Cekok', 'Patihan Wetan', 'Kadipaten', 'Japan', 'Gupolo', 'Polorejo', 'Bareng', 'Sukosari', 'Lembah', 'Pondok', 'Babadan', 'Purwosari', 'Trisono'],
+  Jenangan: ['Mrican', 'Singosaren', 'Setono', 'Plalangan', 'Ngrupit', 'Sedah', 'Pintu', 'Panjeng', 'Jimbe', 'Jenangan', 'Sraten', 'Kemiri', 'Semanding', 'Tanjungsari', 'Nglayang', 'Paringan', 'Wates'],
+  Ngebel: ['Ngrogung', 'Sahang', 'Wagir Lor', 'Talun', 'Gondowido'],
+};
+
+export const kecamatanPonorogo = Object.keys(desaPonorogo);
