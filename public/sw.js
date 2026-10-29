@@ -63,14 +63,8 @@ async function networkFirst(request) {
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) {
-    // Perbarui diam-diam supaya aset terbaru terambil setelah visit berikutnya.
-    fetch(request)
-      .then((response) => {
-        if (response && response.ok) {
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
-        }
-      })
-      .catch(() => {});
+    // Aset stabil hanya berubah saat CACHE_NAME dinaikkan. Jangan lakukan
+    // request jaringan tambahan pada setiap ikon/ornamen yang sudah tersimpan.
     return cached;
   }
 
