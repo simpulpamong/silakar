@@ -61,11 +61,9 @@ export interface ParsedReport {
 
 export function parseReport(rawText: string): ParsedReport {
   const text = cleanReportText(rawText);
-  const tanggalFull = first(text, [
-    /HARI\s*(?:DAN\s+)?TANGGAL(?:\s+PELAKSANAANNYA|\s+PELAKSANAAN)?\s*[:：]?\s*([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4})/i,
-    /(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i,
-  ]);
-  const dayFromDate = first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
+  const tanggalMatch = /HARI\s*(?:DAN\s+)?TANGGAL(?:\s+PELAKSANAANNYA|\s+PELAKSANAAN)?\s*[:：]?\s*[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*(\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4})/i.exec(text);
+  const tanggalFull = tanggalMatch?.[1] || first(text, [/(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i]);
+  const dayFromDate = first(text, [/HARI\s*(?:DAN\s+)?TANGGAL[^:：]*[:：]?\s*([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?)/i]) || first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
   const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['GPS', 'JARAK TEMPUH', 'ESTIMASI WAKTU', 'PEMBERI INFORMASI', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN KEGIATAN']);
   const personil = section(text, ['PERSONIL(?:\s+YANG\s+TERLIBAT)?'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN', 'KENDALA']);
   const regu = first(text, [
