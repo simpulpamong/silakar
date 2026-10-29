@@ -137,6 +137,8 @@ export function useTheme() {
 
   useEffect(() => {
     const current = getStoredTheme();
+    // Initialize from persisted/browser theme after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current);
     applyThemeToDOM(current);
     setMounted(true);

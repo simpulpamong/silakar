@@ -132,6 +132,8 @@ export default function MapPickerModal() {
   }, [mapPickerOpen]);
 
   useEffect(() => {
+    // Reset validation state when the picker closes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!mapPickerOpen) setError(null);
   }, [mapPickerOpen]);
 

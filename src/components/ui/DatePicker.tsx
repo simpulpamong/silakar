@@ -37,6 +37,8 @@ export default function DatePicker({
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Keep the visible month synchronized with the controlled value.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (value) setView(startOfMonth(value, today));
   }, [value, today]);
 

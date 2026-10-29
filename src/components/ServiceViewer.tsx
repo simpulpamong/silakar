@@ -30,6 +30,8 @@ export default function ServiceViewer({ src, title, frameTitle, icon }: ServiceV
       setAttempt(value => value + 1);
     };
 
+    // Read the initial browser connectivity state once on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOnline(navigator.onLine);
     window.addEventListener('offline', handleOffline);
     window.addEventListener('online', handleOnline);

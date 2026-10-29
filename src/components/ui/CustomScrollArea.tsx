@@ -155,7 +155,7 @@ export default function CustomScrollArea({
           aria-orientation="vertical"
           aria-valuemin={0}
           aria-valuemax={metrics.maxScroll}
-          aria-valuenow={Math.round(viewportRef.current?.scrollTop ?? 0)}
+          aria-valuenow={0}
           tabIndex={0}
           onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}

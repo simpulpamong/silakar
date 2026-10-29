@@ -210,6 +210,8 @@ export function AppProvider({
     const active = () => bootstrapRun.current === run;
 
     const initial = readSettings();
+    // Restore persisted settings during bootstrap.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(initial);
     // Idempoten: skrip bootstrap di <head> sudah memasang class yang sama,
     // jadi DOM tidak berubah dan tidak ada kedipan.
