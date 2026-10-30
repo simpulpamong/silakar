@@ -1,12 +1,5 @@
-import { apiFetch } from '@/features/core/apiClient';
-
-export async function resolveWhatsAppGroupUrl(): Promise<string> {
-  try {
-    const result = await apiFetch<{ url?: string }>('/api/silakar/whatsapp', { timeout: 8000 });
-    return result.url || '';
-  } catch {
-    return '';
-  }
+export function buildWhatsAppShareUrl(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
 export function buildWhatsAppMessage(report: string, folderUrl: string, photoCount: number): string {

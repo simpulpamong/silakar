@@ -8,7 +8,7 @@ import { esc } from '@/lib/html';
 import { MAX_PHOTOS } from '@/lib/constants';
 import { FIELD_LABELS, parseReport } from '@/lib/silakarParser';
 import type { PhotoData } from '../core/types';
-import { resolveWhatsAppGroupUrl, buildWhatsAppMessage } from './whatsapp';
+import { buildWhatsAppMessage, buildWhatsAppShareUrl } from './whatsapp';
 import { formatWhatsAppHtml } from '@/lib/whatsappFormat';
 
 /**
@@ -166,8 +166,7 @@ export function useSilakarSubmit() {
       if (!response.success) throw new Error(response.message || 'Penulisan spreadsheet gagal.');
 
       const whatsappText = response.whatsapp?.message || buildWhatsAppMessage(reportText, folderUrl, uploaded.length);
-      const whatsappUrl = await resolveWhatsAppGroupUrl();
-      const whatsappReady = Boolean(whatsappUrl);
+      const whatsappUrl = buildWhatsAppShareUrl(whatsappText);
 
       setProgress(3, 100, 'Laporan tersimpan — siap diteruskan ke WhatsApp');
       await new Promise(done => setTimeout(done, 450));
@@ -182,16 +181,14 @@ export function useSilakarSubmit() {
         response.draftRemoved ? '<br><small style="color:var(--muted)">Draft di server ikut dihapus.</small>' : '',
         '<br><br><div class="whatsapp-preview">' + formatWhatsAppHtml(whatsappText) + '</div>',
         `<br><small style="color:var(--muted)">Album dokumentasi: <a href="${esc(folderUrl || '')}" target="_blank" rel="noopener noreferrer">${esc(folderUrl || '')}</a></small>`,
-        '<br><small style="color:var(--muted)">Pengiriman dilakukan manual melalui WhatsApp agar gratis dan tidak membutuhkan API berbayar.</small>',
+        '<br><small style="color:var(--muted)">Tekan tombol Bagikan WhatsApp untuk memilih kontak atau grup tujuan.</small>',
       ].join('');
 
-      showAlert('success', 'Laporan Terkirim', whatsappMessageHtml);
-
-      if (whatsappReady && whatsappUrl) {
-        window.setTimeout(() => {
-          window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-        }, 800);
-      }
+      showAlert(
+        'success',
+        'Laporan Terkirim',
+        whatsappMessageHtml + `<br><br><a class="btn btn-primary" href="${esc(whatsappUrl)}" target="_blank" rel="noopener noreferrer">Bagikan ke WhatsApp</a>`,
+      );
     } catch (error) {
       stopLoading();
       const message = (error as Error).message || 'Terjadi kesalahan saat mengirim.';
