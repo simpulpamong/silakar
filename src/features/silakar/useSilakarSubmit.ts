@@ -6,7 +6,7 @@ import { adaptiveConcurrency, adaptiveTimeout, apiFetch, parallelLimit, withRetr
 import { formatExifTime } from '../core/exif';
 import { esc } from '@/lib/html';
 import { MAX_PHOTOS } from '@/lib/constants';
-import { FIELD_LABELS, parseReport } from '@/lib/silakarParser';
+import { FIELD_LABELS, parseReport } from '@/lib/parser/whatsapp/parser';
 import type { PhotoData } from '../core/types';
 import { buildWhatsAppMessage, buildWhatsAppShareUrl } from './whatsapp';
 import { formatWhatsAppHtml } from '@/lib/whatsappFormat';
@@ -25,6 +25,10 @@ const STEPS = [
   { icon: 'table', label: 'Tulis ke Spreadsheet' },
   { icon: 'circleCheck', label: 'Selesai' },
 ];
+
+function photoId(reportId: string, index: number, photo: PhotoData): string {
+  return `${reportId}-${index + 1}-${photo.data?.slice(-32) || photo.sizeKB}`;
+}
 
 interface PhotoMetaPayload {
   hasGps: boolean;
@@ -83,14 +87,30 @@ export function useSilakarSubmit() {
 
     setBusy(true);
     startLoading('submit', 'Mengirim Laporan…', 'Menyiapkan data…', STEPS);
-    setProgress(0, 5, 'Memeriksa koneksi layanan…');
+    let displayedProgress = 0;
+    const advanceProgress = async (target: number, step: number, sub: string) => {
+      const next = Math.max(displayedProgress, Math.min(100, target));
+      while (displayedProgress < next) {
+        displayedProgress = Math.min(next, displayedProgress + 1);
+        setProgress(step, displayedProgress, sub);
+        await new Promise(resolve => setTimeout(resolve, 8));
+      }
+    };
+
+    await advanceProgress(5, 0, 'Memeriksa koneksi layanan…');
 
     try {
+      const idResponse = await apiFetch<{ reportId: string }>('/api/silakar', {
+        method: 'POST',
+        timeout: adaptiveTimeout(30_000),
+        body: { action: 'generateReportId', data: { kategori: scope } },
+      });
+      const reportId = idResponse.reportId;
       // Kesiapan layanan divalidasi oleh endpoint submit/upload yang aktif.
       // Endpoint /api/sign adalah pipeline lama dan tidak digunakan SILAKAR.
-      setProgress(0, 5, 'Menyiapkan layanan penyimpanan…');
+      await advanceProgress(10, 0, 'Menyiapkan layanan penyimpanan…');
 
-      setProgress(0, 5, 'Mengecek teks laporan…');
+      await advanceProgress(15, 0, 'Mengecek teks laporan…');
       let done = 0;
       const results = await parallelLimit(
         photos,
@@ -106,18 +126,21 @@ export function useSilakarSubmit() {
                     foto: { data: photo.data, mime: photo.mime, source: photo.source },
                     meta: metaOf(photo),
                     laporan: reportText,
+                    kategori: scope,
+                    reportId,
+                    idempotencyKey: photoId(reportId, index, photo),
                     noFoto: index + 1,
                     jumlahTotal: photos.length,
                   },
                 },
               }),
-            2,
-            600,
+            3,
+            1200,
           );
           done += 1;
-          setProgress(
+          await advanceProgress(
+            15 + Math.round((done / photos.length) * 65),
             1,
-            Math.round((done / photos.length) * 75) + 5,
             `Mengunggah foto ${done} dari ${photos.length}…`,
           );
           return {
@@ -130,7 +153,7 @@ export function useSilakarSubmit() {
             folderId: response.folderId,
           } satisfies DrivePhotoLink;
         },
-        Math.min(adaptiveConcurrency(4), 4),
+        Math.min(adaptiveConcurrency(3), 3),
       );
 
       const failed = results.filter((item): item is Error => item instanceof Error);
@@ -139,8 +162,8 @@ export function useSilakarSubmit() {
       const uploaded = results.filter((item): item is DrivePhotoLink => !(item instanceof Error));
       const folderUrl = uploaded.find(item => item.folderUrl)?.folderUrl || '';
 
-      setProgress(1, 80, `${uploaded.length} foto terunggah ke Drive`);
-      setProgress(2, 90, 'Menulis ke Spreadsheet…');
+      await advanceProgress(82, 1, `${uploaded.length} foto terunggah ke Drive`);
+      await advanceProgress(94, 2, 'Menulis ke Spreadsheet…');
 
       const response = await withRetry(
         () =>
@@ -152,6 +175,7 @@ export function useSilakarSubmit() {
               data: {
                 laporan: reportText,
                 kategori: scope === 'odnk' ? 'odnk' : 'kebakaran',
+                reportId,
                 linkFoto: uploaded.map(({ link, namaFile, source, meta, fileId, folderId, folderUrl }) => ({
                   link,
                   namaFile,
@@ -175,7 +199,7 @@ export function useSilakarSubmit() {
       const whatsappText = response.whatsapp?.message || buildWhatsAppMessage(reportText, folderUrl, uploaded.length);
       const whatsappUrl = buildWhatsAppShareUrl(whatsappText);
 
-      setProgress(3, 100, 'Laporan tersimpan — siap diteruskan ke WhatsApp');
+      await advanceProgress(100, 3, 'Laporan tersimpan — siap diteruskan ke WhatsApp');
       await new Promise(done => setTimeout(done, 450));
       stopLoading();
 
@@ -187,8 +211,6 @@ export function useSilakarSubmit() {
         `<b>${uploaded.length}</b> foto tersimpan di Drive dan Spreadsheet.`,
         response.draftRemoved ? '<br><small style="color:var(--muted)">Draft di server ikut dihapus.</small>' : '',
         '<br><br><div class="whatsapp-preview">' + formatWhatsAppHtml(whatsappText) + '</div>',
-        `<br><small style="color:var(--muted)">Album dokumentasi: <a href="${esc(folderUrl || '')}" target="_blank" rel="noopener noreferrer">${esc(folderUrl || '')}</a></small>`,
-        '<br><small style="color:var(--muted)">Tekan tombol Bagikan WhatsApp untuk memilih kontak atau grup tujuan.</small>',
       ].join('');
 
       showAlert(
@@ -202,7 +224,7 @@ export function useSilakarSubmit() {
       showAlert(
         'error',
         'Gagal Mengirim Laporan',
-        `${esc(message)}<br><small style="color:var(--muted)">Data tetap tersimpan di perangkat — tekan KIRIM LAPORAN untuk mencoba lagi.</small>`,
+        `${esc(message)}<br><small style="color:var(--muted)">Data tetap tersimpan di perangkat. Simpan sebagai <b>Draft</b> untuk melanjutkan dari menu <b>Draft</b> tanpa mengulang pengisian.</small>`,
       );
     } finally {
       setBusy(false);

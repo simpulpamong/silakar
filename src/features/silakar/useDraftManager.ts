@@ -110,6 +110,7 @@ export function useDraftManager() {
               body: {
                 action: 'append',
                 draftId: created.draftId,
+                photoKey: `${created.draftId}-${photo.sizeKB}-${photo.data?.slice(-24) || _index}`,
                 scope: SCOPE,
                 foto: { data: photo.data, mime: photo.mime, source: photo.source },
                 sizeKB: photo.sizeKB,
@@ -150,7 +151,11 @@ export function useDraftManager() {
       );
     } catch (error) {
       stopLoading();
-      showAlert('error', 'Gagal Menyimpan Draft', (error as Error).message);
+      showAlert(
+        'error',
+        'Gagal Menyimpan Draft',
+        `${esc((error as Error).message)}<br><small style="color:var(--muted)">Draft yang sudah berhasil tersimpan tetap tersedia. Buka menu <b>Draft</b> untuk melanjutkan tanpa mengulang dari awal.</small>`,
+      );
     } finally {
       setSaving(false);
     }

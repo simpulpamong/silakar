@@ -204,12 +204,14 @@ export function drawWatermark(args: DrawWatermarkArgs) {
   const qrSize = qr ? Math.max(72, Math.min(190, Math.round(Math.min(width, height) * 0.13))) : 0;
   const qrPad = qr ? Math.round(pad * 0.55) : 0;
 
-  const fontTitle = Math.max(11, Math.round(logoSize * 0.36));
+  const baseTitle = Math.max(11, Math.round(logoSize * 0.36));
   const fontBody = Math.max(9, Math.round(logoSize * 0.3));
   const fontSmall = Math.max(7, Math.round(fontBody * 0.72));
   const lineHeight = Math.round(fontBody * 1.5);
   const textX = bar + Math.round(pad * 0.4) + logoSize + Math.round(pad * 0.5);
-  const textWidth = width - textX - pad - (qr ? qrSize + qrPad * 2 : 0);
+  const textWidth = Math.max(80, width - textX - pad - (qr ? qrSize + qrPad * 2 : 0));
+  const title = `${WATERMARK_BRAND} (${context.program})`;
+  const fontTitle = Math.max(9, Math.min(baseTitle, Math.floor((textWidth / title.length) * 1.65)));
 
   const address = context.address?.full || context.fallbackAddress;
   const gps = context.gps || null;
@@ -222,6 +224,8 @@ export function drawWatermark(args: DrawWatermarkArgs) {
       ? 'Lokasi dari input manual'
       : 'Koordinat tidak tersedia';
   const person = context.unit.trim();
+  const qrLabelFont = qr ? Math.max(7, Math.round(fontSmall * 0.85)) : 0;
+  const qrLabelGap = qr ? Math.max(3, Math.round(pad * 0.18)) : 0;
 
   ctx.save();
   ctx.font = `${fontBody}px "Helvetica Neue", Arial, sans-serif`;
@@ -229,10 +233,12 @@ export function drawWatermark(args: DrawWatermarkArgs) {
   // Baris di bawah judul: program + nama petugas (opsional) + waktu + alamat + koordinat.
   const contentHeight =
     Math.round(fontTitle * 1.45) + (3 + addressLines.length + (person ? 1 : 0)) * lineHeight;
+  const qrFrame = qr ? Math.max(3, Math.round(qrSize * 0.03)) : 0;
+  const qrBlockHeight = qr ? qrLabelFont + qrLabelGap + qrSize + padV * 2 + qrFrame * 2 : 0;
   const stripHeight = Math.max(
     Math.round(height * 0.085),
     padV * 2 + contentHeight,
-    qr ? qrSize + padV * 2 : 0,
+    qrBlockHeight,
   );
   const stripY = height - stripHeight;
 
@@ -271,20 +277,20 @@ export function drawWatermark(args: DrawWatermarkArgs) {
   // QR lokasi
   if (qr && qrSize) {
     const qx = width - qrSize - qrPad;
-    const qy = stripY + Math.round((stripHeight - qrSize) / 2);
+    const qy = stripY + padV + qrLabelFont + qrLabelGap + qrFrame;
     ctx.fillStyle = '#ffffff';
-    const frame = Math.max(3, Math.round(qrSize * 0.03));
+    const frame = qrFrame;
     ctx.fillRect(qx - frame, qy - frame, qrSize + frame * 2, qrSize + frame * 2);
     try {
       ctx.drawImage(qr, qx, qy, qrSize, qrSize);
     } catch {
       /* abaikan */
     }
-    ctx.font = `700 ${Math.max(7, Math.round(fontSmall * 0.85))}px "Helvetica Neue", Arial, sans-serif`;
+    ctx.font = `700 ${qrLabelFont}px "Helvetica Neue", Arial, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.72)';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('LIHAT LOKASI', qx + qrSize / 2, qy - frame - 3);
+    ctx.textBaseline = 'top';
+    ctx.fillText('LIHAT LOKASI', qx + qrSize / 2, stripY + padV);
   }
 
   // Teks
@@ -295,14 +301,8 @@ export function drawWatermark(args: DrawWatermarkArgs) {
   // Judul tetap "DAMKAR PONOROGO" untuk semua kategori.
   ctx.font = `800 ${fontTitle}px "Helvetica Neue", Arial, sans-serif`;
   ctx.fillStyle = 'rgba(255,206,74,0.95)';
-  ctx.fillText(WATERMARK_BRAND, textX, y, textWidth);
+  ctx.fillText(title, textX, y, textWidth);
   y += Math.round(fontTitle * 1.45);
-
-  // Baris kedua: hanya program kategori yang sedang berjalan.
-  ctx.font = `700 ${fontBody}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
-  ctx.fillText(`Program: ${context.program}`, textX, y, textWidth);
-  y += lineHeight;
 
   if (person) {
     ctx.fillText(`Danru: ${person}`, textX, y, textWidth);
@@ -327,21 +327,12 @@ export function drawWatermark(args: DrawWatermarkArgs) {
   ctx.fillText(coords, textX, y, textWidth);
 
   // Wordmark SILAKAR
-  const brandSize = Math.max(8, Math.round(width * 0.023));
+  const brandSize = Math.max(7, Math.round(width * 0.018));
   ctx.textAlign = 'right';
   ctx.textBaseline = 'bottom';
   ctx.font = `900 ${brandSize}px "Helvetica Neue", Arial, sans-serif`;
   ctx.fillStyle = 'rgba(255,205,0,0.55)';
   ctx.fillText('SILAKAR', width - Math.round(pad * 0.4), height - Math.round(pad * 0.25), Math.round(width * 0.24));
-  ctx.font = `400 ${Math.round(brandSize * 0.7)}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.38)';
-  ctx.fillText(
-    'Damkar Ponorogo',
-    width - Math.round(pad * 0.4),
-    height - Math.round(pad * 0.25) - brandSize - 2,
-    Math.round(width * 0.2),
-  );
-
   ctx.restore();
 }
 

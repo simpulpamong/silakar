@@ -393,39 +393,39 @@ const STRUCTURED_GUIDE = [
   {
     n: 2,
     title: 'Ambil foto dokumentasi',
-    desc: 'Gunakan Kamera agar EXIF GPS terbaca. Sistem menempel watermark alamat, waktu, koordinat, dan QR lokasi.',
+    desc: 'Ambil foto dengan Kamera agar koordinat GPS dapat dibaca, atau pilih foto dari Galeri. Jika watermark aktif, sistem menempelkan waktu, lokasi, koordinat, nama kategori, dan QR lokasi.',
   },
   {
     n: 3,
     title: 'Kirim laporan',
-    desc: 'Draft dan foto sementara disimpan di Cloudinary serta metadata-nya di Firebase. Laporan final dikirim ke Google Drive dan Spreadsheet.',
+    desc: 'Teks dan foto diproses di perangkat. Saat dikirim, laporan diteruskan ke penyimpanan dan Spreadsheet sesuai konfigurasi sistem.'
   },
   {
     n: 4,
     title: 'Tunggu konfirmasi',
-    desc: 'Layar progres menampilkan tahap unggah dan penyimpanan. Foto tetap aman di perangkat bila koneksi terputus.',
+    desc: 'Tunggu sampai proses pengiriman selesai. Jika koneksi terputus, periksa pesan status lalu coba kirim kembali.'
   },
 ];
 
 const KEBAKARAN_GUIDE = [
   {
     n: 1,
-    title: 'Tempel teks laporan',
-    desc: 'Salin teks laporan patroli dari WhatsApp. Pastikan memuat Patroli, Hari, Tanggal, Identitas Pelanggaran, Personil, dan Danru.',
+    title: 'Isi teks laporan',
+    desc: 'Tempel teks laporan dari WhatsApp atau gunakan template kosong. Periksa kembali isi laporan sebelum menambahkan foto.',
   },
   {
     n: 2,
-    title: 'Ambil foto melalui Kamera',
-    desc: 'Pastikan GPS aktif. Sistem membaca EXIF, mencari nama jalan, lalu membuat watermark beserta QR lokasi.',
+    title: 'Tambahkan foto dokumentasi',
+    desc: 'Ambil foto dengan Kamera agar koordinat GPS dapat dibaca, atau pilih foto dari Galeri. Watermark menampilkan DAMKAR PONOROGO dan nama kategori (Kebakaran/ODNK), waktu, lokasi, koordinat, serta QR lokasi.',
   },
   {
     n: 3,
-    title: 'Simpan sebagai draft bila perlu',
-    desc: 'Tombol Simpan Draft memindahkan foto dan teks ke server agar bisa dilanjutkan dari perangkat lain.',
+    title: 'Atur lokasi bila diperlukan',
+    desc: 'Untuk foto Galeri tanpa GPS, isi Lokasi Manual di Pengaturan. Aktifkan watermark kamera atau galeri sesuai kebutuhan.',
   },
   {
     n: 4,
-    title: 'Kirim laporan',
-    desc: 'Saat laporan final dikirim, dokumentasi dipindahkan ke Google Drive per kategori dan tanggal, lalu data ditulis ke Spreadsheet. Draft Firebase/Cloudinary dihapus otomatis.',
+    title: 'Kirim atau simpan draft',
+    desc: 'Tekan KIRIM LAPORAN setelah teks dan foto siap. Jika belum selesai, tekan Simpan Draft; buka menu Draft untuk melanjutkan atau menghapus draft.',
   },
 ];

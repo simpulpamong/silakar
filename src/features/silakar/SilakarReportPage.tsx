@@ -13,7 +13,6 @@ import { useDraftManager } from './useDraftManager';
 import { useSilakarSubmit } from './useSilakarSubmit';
 import { useSilakarWatermarkContext } from './watermarkContext';
 import { useApp } from '../core/AppContext';
-import BatikBackdrop from '@/components/BatikBackdrop';
 
 /** Halaman laporan silakar: tempel teks + foto → Google Drive + Spreadsheet. */
 export default function SilakarReportPage() {
@@ -24,7 +23,6 @@ export default function SilakarReportPage() {
 
   return (
     <div className="shell">
-      <BatikBackdrop />
       <div className="shell-inner">
         <BrandHeader />
 

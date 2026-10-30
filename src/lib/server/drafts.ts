@@ -1,13 +1,32 @@
 import { getFirestore } from './firebase';
 import { uploadDraftPhoto, deleteDraftPhoto } from './cloudinary';
 export interface DraftPhotoMeta { hasGps?: boolean; lat?: number|null; lng?: number|null; datetime?: string|null; address?: string|null; source?: string }
-type Photo = { publicId:string; dataUrl?:string; mime:string; source:string; exifMeta:DraftPhotoMeta; sizeKB:number; url?:string }
+type Photo = { photoKey:string; status:'pending'|'uploading'|'uploaded'|'failed'; publicId:string; dataUrl?:string; mime:string; source:string; exifMeta:DraftPhotoMeta; sizeKB:number; url?:string }
 type Draft = { draftId:string; scope:string; teks:string; label:string; photos:Photo[]; createdAt:number }
 const memory = new Map<string,Draft>();
 const firebase = () => Boolean(process.env.FIREBASE_SERVICE_ACCOUNT && process.env.CLOUDINARY_CLOUD_NAME);
 const col = () => getFirestore().collection('silakar-drafts');
 export async function createDraft(x:{draftId:string;scope:string;teks:string;label:string}) { const d={...x,photos:[],createdAt:Date.now()}; if(firebase()) await col().doc(x.draftId).set(d); else memory.set(x.draftId,d); return x.draftId; }
-export async function appendDraftPhoto(x:{draftId:string;scope:string;dataUrl:string;mime:string;source:string;sizeKB:number;exifMeta:DraftPhotoMeta}) { const d=await read(x.draftId); if(!d) throw new Error('Draft tidak ditemukan'); const uploaded=await uploadDraftPhoto(x.dataUrl,x.scope,x.draftId,d.photos.length+1); const photo={publicId:uploaded.publicId,url:uploaded.url,mime:x.mime,source:x.source,sizeKB:x.sizeKB,exifMeta:x.exifMeta}; d.photos.push(photo); await save(d); return {publicId:photo.publicId}; }
+export async function appendDraftPhoto(x:{draftId:string;scope:string;dataUrl:string;mime:string;source:string;sizeKB:number;exifMeta:DraftPhotoMeta;photoKey?:string}) {
+  const d=await read(x.draftId);
+  if(!d) throw new Error('Draft tidak ditemukan');
+  const photoKey = x.photoKey || `${d.photos.length + 1}-${x.sizeKB}-${x.dataUrl.slice(-24)}`;
+  const existing = d.photos.find(photo => photo.photoKey === photoKey);
+  if (existing?.status === 'uploaded') return { publicId: existing.publicId, url: existing.url, status: existing.status };
+  const index = d.photos.findIndex(photo => photo.photoKey === photoKey);
+  const photo = existing || { photoKey, status: 'pending' as const, publicId: '', mime:x.mime, source:x.source, sizeKB:x.sizeKB, exifMeta:x.exifMeta };
+  photo.status = 'uploading';
+  if (index < 0) d.photos.push(photo);
+  await save(d);
+  try {
+    const uploaded=await uploadDraftPhoto(x.dataUrl,x.scope,x.draftId,photoKey);
+    photo.publicId=uploaded.publicId; photo.url=uploaded.url; photo.status='uploaded';
+    await save(d);
+    return {publicId:photo.publicId,url:photo.url,status:photo.status};
+  } catch (error) {
+    photo.status='failed'; await save(d); throw error;
+  }
+}
 export async function consumeDraft(id:string) { const d=await read(id); if(!d) throw new Error('Draft tidak ditemukan'); if(firebase()) await col().doc(id).delete(); else memory.delete(id); return {teks:d.teks,photos:d.photos,summary:{teksPreview:d.label||d.teks.slice(0,120)}}; }
 export async function getDraft(id:string) { const d=await read(id); return {exists:!!d,jumlahFoto:d?.photos.length||0}; }
 export async function deleteDraft(id:string) { const d=await read(id); if(!d)return false; for(const p of d.photos) await deleteDraftPhoto(p.publicId); if(firebase()) await col().doc(id).delete(); else memory.delete(id); return true; }

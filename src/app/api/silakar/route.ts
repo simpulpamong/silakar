@@ -6,7 +6,7 @@ import {
   mimeToExt,
   parseIndonesianDate,
   parseReport,
-} from '@/lib/silakarParser';
+} from '@/lib/parser/whatsapp/parser';
 import { uploadPhotoToDateFolder } from '@/lib/server/googleDrive';
 import { saveReportWithPhotos, type PhotoLink } from '@/lib/server/googleSheets';
 import { deleteDraft, getDraft } from '@/lib/server/drafts';
@@ -32,6 +32,7 @@ interface SilakarBody {
     folderUrl?: string;
     draftId?: string | null;
     reportId?: string;
+    idempotencyKey?: string;
     kategori?: 'kebakaran' | 'odnk';
   };
 }
@@ -42,6 +43,8 @@ export async function POST(request: Request) {
     const body = await readJson<SilakarBody>(request);
 
     switch (body.action) {
+      case 'generateReportId':
+        return generateReportId(body);
       case 'uploadFoto':
         return uploadFoto(body);
       case 'submitLaporan':
@@ -54,6 +57,26 @@ export async function POST(request: Request) {
         );
     }
   });
+}
+
+async function generateReportId(body: SilakarBody) {
+  const categoryCode = body.data?.kategori === 'odnk' ? 'ODNK' : 'KEBAKARAN';
+  const now = new Date();
+  const dateCode = `${String(now.getDate()).padStart(2, '0')}${String(now.getMonth() + 1).padStart(2, '0')}${now.getFullYear()}`;
+  const prefix = `SLK-${categoryCode}-`;
+  const appsScriptUrl = process.env.APPS_SCRIPT_URL;
+  if (!appsScriptUrl) throw new ApiError('Layanan pembuat ID laporan belum dikonfigurasi.', 503, 'id_service_unavailable');
+  const response = await fetch(appsScriptUrl, {
+    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'generateReportId', token: process.env.APPS_SCRIPT_TOKEN || '', data: { category: categoryCode } }),
+    cache: 'no-store',
+  });
+  const result = await response.json() as { success?: boolean; reportId?: string; data?: { reportId?: string }; message?: string };
+  const reportId = result.reportId || result.data?.reportId;
+  if (!response.ok || result.success === false || !reportId) {
+    throw new ApiError(result.message || 'Gagal membuat ID laporan unik.', 503, 'id_generation_failed');
+  }
+  return ok({ reportId });
 }
 
 async function uploadFoto(body: SilakarBody) {
@@ -87,6 +110,9 @@ async function uploadFoto(body: SilakarBody) {
   const result = await uploadPhotoToDateFolder({
     folderMonth: formatMonthFolder(reportDate),
     folderDate: formatDateFolder(reportDate),
+    category: body.data?.kategori === 'odnk' ? 'ODNK' : 'KEBAKARAN',
+    reportId: str(body.data?.reportId, 100),
+    idempotencyKey: str(body.data?.idempotencyKey, 160),
     fileName,
     mime,
     dataUrl,
@@ -127,7 +153,7 @@ async function submitLaporan(body: SilakarBody) {
   const reportId = str(body.data?.reportId, 100) || `SLK-${categoryCode}-01/${String(submitDate.getDate()).padStart(2, '0')}${String(submitDate.getMonth() + 1).padStart(2, '0')}${submitDate.getFullYear()}`;
 
   await saveReportWithPhotos(
-    { parsed, photos: links, folderUrl, kategori: body.data?.kategori, rawText: laporan },
+    { parsed, photos: links, folderUrl, kategori: body.data?.kategori, rawText: laporan, reportId },
     links.map(photo => ({
       idLaporan: reportId,
       kategori: body.data?.kategori,

@@ -1,28 +1,31 @@
 import { getSpreadsheetId, withSheetsFallback } from './googleAuth';
-import { parseReport } from '../silakarParser';
+import { parseReport } from '../parser/whatsapp/parser';
 import { formatWib } from '../format';
 import { REPORT_HEADERS as CONTRACT_REPORT_HEADERS, PHOTO_HEADERS as CONTRACT_PHOTO_HEADERS } from './schema-contract';
+import { CATEGORY_CONFIG, resolveCategory, type ReportCategory } from './category-config';
 
 export const SHEET = {
-  reports: { kebakaran: 'KEBAKARAN', odnk: 'ODNK' },
-  photos: { kebakaran: 'DOKUMENTASI KEBAKARAN', odnk: 'DOKUMENTASI ODNK' },
+  reports: { kebakaran: CATEGORY_CONFIG.kebakaran.reportSheet, odnk: CATEGORY_CONFIG.odnk.reportSheet },
+  photos: { kebakaran: CATEGORY_CONFIG.kebakaran.photoSheet, odnk: CATEGORY_CONFIG.odnk.photoSheet },
+  narratives: { kebakaran: CATEGORY_CONFIG.kebakaran.narrativeSheet, odnk: CATEGORY_CONFIG.odnk.narrativeSheet },
 } as const;
 
-function categoryKey(category?: string): 'kebakaran' | 'odnk' {
-  return String(category || '').toLowerCase() === 'odnk' ? 'odnk' : 'kebakaran';
+function categoryKey(category?: string): ReportCategory {
+  return resolveCategory(category);
 }
 
 /** Jumlah kolom foto pada sheet INPUT (kolom M sampai V). */
 export const PHOTO_COLUMNS = 10;
 
-export { parseReport, buildPhotoFileName, parseIndonesianDate, mimeToExt } from '../silakarParser';
-export type { ParsedReport } from '../silakarParser';
+export { parseReport, buildPhotoFileName, parseIndonesianDate, mimeToExt } from '../parser/whatsapp/parser';
+export type { ParsedReport } from '../parser/whatsapp/parser';
 
 /* ── Struktur baris ─────────────────────────────────────────────── */
 
 /** Canonical column order for both report tabs (KEBAKARAN and ODNK). */
 export const REPORT_HEADERS = CONTRACT_REPORT_HEADERS;
 export const PHOTO_HEADERS = CONTRACT_PHOTO_HEADERS;
+export const NARRATIVE_HEADERS = ['Waktu Submit', 'ID Laporan', 'Kategori', 'Narasi Asli', 'Folder Drive'];
 
 export interface PhotoMeta {
   hasGps?: boolean;
@@ -47,6 +50,7 @@ export interface ReportRowInput {
   createdAt?: Date;
   kategori?: 'kebakaran' | 'odnk';
   rawText?: string;
+  reportId?: string;
 }
 
 export interface PhotoRowInput {
@@ -75,9 +79,9 @@ export function buildReportRow(input: ReportRowInput): (string | number)[] {
   const fallbackGps = parsed.latitude && parsed.longitude ? { lat: Number(parsed.latitude), lng: Number(parsed.longitude) } : null;
   // Selaraskan persis dengan REPORT_HEADERS di Apps Script (36 kolom).
   return [
-    formatWib(input.createdAt ?? new Date()), parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
+    formatWib(input.createdAt ?? new Date()), input.reportId || parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
     parsed.tanggal || '-', parsed.hari || '-', parsed.lokasi || '-', parsed.latitude || '-', parsed.longitude || '-', parsed.googleMaps || '-',
-    parsed.pelapor || '-', (parsed.pemilik || parsed.objek) || '-', parsed.penghuni || '-', parsed.korban || '-', parsed.penyebab || '-', parsed.kronologi || '-', parsed.tindakan || '-', parsed.kerugian || '-', parsed.hartaTerselamatkan || '-', parsed.luasArea || '-', parsed.jarakTempuh || '-', parsed.estimasiPerjalanan || '-', parsed.waktuLaporan || '-', parsed.waktuBerangkat || '-', parsed.waktuTiba || '-', parsed.waktuMulai || '-', parsed.waktuSelesai || '-', parsed.waktuKembali || '-', parsed.armada || '-', parsed.personil || '-', parsed.kendala || '-', parsed.rincianKegiatan || '-', input.rawText || '-', input.folderUrl || '', photos.length, 'DITERIMA', 'SILAKAR',
+    parsed.pelapor || '-', parsed.objek || '-', parsed.pemilik || '-', parsed.penghuni || '-', parsed.korban || '-', parsed.penyebab || '-', parsed.kronologi || '-', parsed.tindakan || '-', parsed.kerugian || '-', parsed.hartaTerselamatkan || '-', parsed.luasArea || '-', parsed.jarakTempuh || '-', parsed.estimasiPerjalanan || '-', parsed.waktuLaporan || '-', parsed.waktuBerangkat || '-', parsed.waktuTiba || '-', parsed.waktuMulai || '-', parsed.waktuSelesai || '-', parsed.waktuKembali || '-', parsed.jumlahArmada || '-', parsed.armada || '-', parsed.kendala || '-', parsed.rincianKegiatan || '-', parsed.personil || '-', parsed.yangMelaporkan || '-', input.folderUrl || '', photos.length, 'DITERIMA',
   ];
 }
 
@@ -101,8 +105,64 @@ export function buildPhotoRow(options: PhotoRowInput): (string | number)[] {
 
 /* ── Penulisan sheet ─────────────────────────────────────────────── */
 
+async function ensureSheetStructure(): Promise<void> {
+  const spreadsheetId = getSpreadsheetId();
+  await withSheetsFallback(async sheets => {
+    const book = await sheets.spreadsheets.get({ spreadsheetId, includeGridData: false });
+    const existing = new Map((book.data.sheets || []).map(sheet => [sheet.properties?.title || '', sheet.properties?.sheetId || 0]));
+    const requests: any[] = [];
+    for (const definition of [
+      { title: SHEET.reports.kebakaran, headers: REPORT_HEADERS },
+      { title: SHEET.reports.odnk, headers: REPORT_HEADERS },
+      { title: SHEET.photos.kebakaran, headers: PHOTO_HEADERS },
+      { title: SHEET.photos.odnk, headers: PHOTO_HEADERS },
+      { title: SHEET.narratives.kebakaran, headers: NARRATIVE_HEADERS },
+      { title: SHEET.narratives.odnk, headers: NARRATIVE_HEADERS },
+    ]) {
+      const sheetId = existing.get(definition.title);
+      if (sheetId === undefined) requests.push({ addSheet: { properties: { title: definition.title } } });
+    }
+    if (requests.length) await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } });
+    const refreshed = requests.length
+      ? await sheets.spreadsheets.get({ spreadsheetId, includeGridData: false })
+      : book;
+    const byTitle = new Map((refreshed.data.sheets || []).map(sheet => [sheet.properties?.title || '', sheet.properties?.sheetId || 0]));
+    const values = [
+      { title: SHEET.reports.kebakaran, headers: REPORT_HEADERS },
+      { title: SHEET.reports.odnk, headers: REPORT_HEADERS },
+      { title: SHEET.photos.kebakaran, headers: PHOTO_HEADERS },
+      { title: SHEET.photos.odnk, headers: PHOTO_HEADERS },
+      { title: SHEET.narratives.kebakaran, headers: NARRATIVE_HEADERS },
+      { title: SHEET.narratives.odnk, headers: NARRATIVE_HEADERS },
+    ];
+    for (const definition of values) {
+      const sheetId = byTitle.get(definition.title);
+      if (!sheetId) continue;
+      await sheets.spreadsheets.values.update({ spreadsheetId, range: `'${definition.title.replace(/'/g, "''")}'!A1`, valueInputOption: 'RAW', requestBody: { values: [definition.headers] } });
+      await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: [{ updateSheetProperties: { properties: { sheetId, title: definition.title, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' } }, { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.12, green: 0.31, blue: 0.47 }, textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } }] } });
+    }
+  });
+}
+
 async function appendRows(sheetName: string, rows: (string | number)[][]): Promise<void> {
   if (!rows.length) return;
+  await ensureSheetStructure();
+  const appsScriptUrl = process.env.APPS_SCRIPT_URL;
+  if (appsScriptUrl) {
+    const response = await fetch(appsScriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'submit',
+        token: process.env.APPS_SCRIPT_TOKEN || '',
+        data: { reportId: String(rows[0][1] || ''), sheetName, rows, photoSheetName: undefined, photoRows: [] },
+      }),
+      cache: 'no-store',
+    });
+    const result = await response.json() as { success?: boolean; message?: string };
+    if (!response.ok || result.success === false) throw new Error(result.message || 'Apps Script gagal menulis spreadsheet.');
+    return;
+  }
   const spreadsheetId = getSpreadsheetId();
   try {
     await withSheetsFallback(sheets =>
@@ -132,6 +192,10 @@ export async function saveReportWithPhotos(
   photos: PhotoRowInput[],
 ): Promise<void> {
   const category = categoryKey(report.kategori);
-  await appendRows(SHEET.reports[category], [buildReportRow(report)]);
-  if (photos.length) await appendRows(SHEET.photos[category], photos.map(buildPhotoRow));
+  const reportRows = [buildReportRow(report)];
+  const photoRows = photos.map(buildPhotoRow);
+  const narrativeRows = [[formatWib(report.createdAt ?? new Date()), report.reportId || report.parsed.nomorSpt || '-', category === 'odnk' ? 'ODNK' : 'Kebakaran', report.rawText || report.parsed.keterangan || '-', report.folderUrl || '']];
+  await appendRows(SHEET.reports[category], reportRows);
+  if (photoRows.length) await appendRows(SHEET.photos[category], photoRows);
+  await appendRows(SHEET.narratives[category], narrativeRows);
 }

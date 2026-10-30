@@ -77,6 +77,7 @@ async function appendDraftAction(body: Record<string, unknown>) {
 
   const asset = await appendDraftPhoto({
     draftId,
+    photoKey: str(body.photoKey, 180),
     scope: str(body.scope, 40) || 'silakar',
     dataUrl,
     mime: str(foto.mime, 60) || 'image/jpeg',

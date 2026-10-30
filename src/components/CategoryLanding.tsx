@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import BatikBackdrop from './BatikBackdrop';
 import CategoryCard from './CategoryCard';
 import Icon from './Icon';
 import { APP_NAME, APP_TAGLINE, CATEGORIES } from '@/lib/constants';
@@ -17,10 +16,6 @@ export default function CategoryLanding() {
 
   return (
     <main className="landing">
-      {/* Ornamen batik dekoratif - menyatu dengan gradient. Komponen yang
-          sama dipakai di setiap halaman kategori laporan. */}
-      <BatikBackdrop />
-
       <div className="landing-header">
         <div className="landing-header-actions">
           <button
@@ -78,7 +73,7 @@ export default function CategoryLanding() {
         <div className="landing-other-grid">
           <Link className="landing-other-card landing-other-admin" href="/admin">
             <span className="landing-other-icon">
-              <img src="/assets/icon-full.webp" alt="" width="44" height="44" loading="lazy" decoding="async" />
+              <img src="/assets/icon-192.png" alt="" width="44" height="44" loading="lazy" decoding="async" />
             </span>
             <span className="landing-other-copy">
               <strong>SILAKAR ADMIN</strong>

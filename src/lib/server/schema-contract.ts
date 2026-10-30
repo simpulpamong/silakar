@@ -1,10 +1,10 @@
 /** Canonical Google Sheets headers. Indices are zero-based and order is contractual. */
 export const REPORT_HEADERS = [
   'Waktu Submit', 'ID Laporan', 'Kategori', 'Tanggal Kejadian', 'Hari', 'Lokasi', 'Latitude', 'Longitude',
-  'Google Maps', 'Pelapor', 'Pemilik / Objek', 'Jumlah Penghuni', 'Korban', 'Penyebab', 'Kronologi',
+  'Google Maps', 'Pelapor', 'Objek', 'Pemilik', 'Jumlah Penghuni', 'Korban', 'Penyebab', 'Kronologi',
   'Tindakan', 'Kerugian', 'Harta Terselamatkan', 'Luas Area', 'Jarak Tempuh', 'Estimasi Perjalanan',
   'Waktu Laporan', 'Waktu Berangkat', 'Waktu Tiba', 'Waktu Mulai', 'Waktu Selesai', 'Waktu Kembali',
-  'Armada', 'Personel', 'Kendala', 'Rincian Kegiatan', 'Narasi Asli', 'Folder Drive', 'Jumlah Foto', 'Status', 'Sumber',
+  'Jumlah Unit Armada', 'Armada', 'Kendala', 'Rincian Kegiatan', 'Personel', 'Yang Melaporkan', 'Folder Drive', 'Jumlah Foto', 'Status',
 ] as const;
 export const PHOTO_HEADERS = [
   'Waktu Upload', 'ID Laporan', 'Kategori', 'Tanggal', 'Nama File', 'URL Drive', 'File ID', 'Folder Drive',

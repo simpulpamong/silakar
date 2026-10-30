@@ -48,13 +48,6 @@ function AlertModal() {
         </div>
         <h2 className="dialog-title">{alertConfig.title}</h2>
         <div className="dialog-msg" dangerouslySetInnerHTML={{ __html: alertConfig.message }} />
-        <button
-          type="button"
-          className={`dialog-btn tone-${alertConfig.type}`}
-          onClick={closeAlert}
-        >
-          Mengerti
-        </button>
       </div>
     </div>
   );

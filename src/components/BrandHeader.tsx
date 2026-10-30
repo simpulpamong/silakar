@@ -11,6 +11,7 @@ import { APP_NAME, APP_TAGLINE } from '@/lib/constants';
 export default function BrandHeader() {
   const { category, settings, toggleTheme, online } = useApp();
   const { setShowSettings } = useSettingsVisibility();
+  const categoryLabel = category.slug === 'odnk' ? 'ODNK' : category.name;
 
   return (
     <header className="header">
@@ -48,7 +49,7 @@ export default function BrandHeader() {
       <div className="logos-row">
         <span className="logo-wrap">
           <Image
-            src="/assets/icon-full.webp"
+            src="/assets/icon-192.png"
             alt="Logo Damkar Ponorogo"
             width={68}
             height={68}
@@ -59,7 +60,7 @@ export default function BrandHeader() {
           <div className="brand-line">
             <span className="brand-title">{APP_NAME}</span>
             <span className="brand-badge">
-              <Icon name="smartphone" /> {category.name}
+              <Icon name="smartphone" /> {categoryLabel}
             </span>
           </div>
           <p className="brand-sub">{APP_TAGLINE.toUpperCase()}</p>

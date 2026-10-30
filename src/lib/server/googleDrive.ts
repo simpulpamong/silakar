@@ -1,10 +1,11 @@
 import { Readable } from 'stream';
 import { getMainFolderId, withDriveFallback } from './googleAuth';
+import { CATEGORY_CONFIG, resolveCategory } from './category-config';
 
-export { formatDateFolder, formatMonthFolder, mimeToExt } from '../silakarParser';
+export { formatDateFolder, formatMonthFolder, mimeToExt } from '../parser/whatsapp/parser';
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
-const APPS_SCRIPT_TIMEOUT_MS = 25_000;
+const APPS_SCRIPT_TIMEOUT_MS = 90_000;
 
 function getDeveloperEmail(): string {
   return process.env.DEVELOPER_EMAIL || '';
@@ -115,13 +116,17 @@ export interface UploadResult {
   storage: 'apps-script' | 'next';
 }
 
+const uploadCache = new Map<string, UploadResult>();
+
 export interface UploadOptions {
   folderMonth: string;
   folderDate: string;
-  fileName: string;
-  mime: string;
   category?: string;
   reportId?: string;
+  /** Kunci stabil agar retry tidak membuat file duplikat. */
+  idempotencyKey?: string;
+  fileName: string;
+  mime: string;
   /** Data URL berisi foto. */
   dataUrl: string;
 }
@@ -133,24 +138,33 @@ export interface UploadOptions {
 /**
  * Unggah satu foto ke Drive dan kembalikan link publik + link folder.
  *
- * Apps Script dicoba lebih dulu bila dikonfigurasi (lebih cepat), tetapi
- * kegagalan apa pun — deployment mati, kuota habis, timeout — dialihkan ke
- * Drive API. Dengan begitu upload tidak pernah gagal hanya karena satu
- * layanan bantu bermasalah.
+ * Apps Script menjadi jalur upload utama bila dikonfigurasi. Drive API hanya
+ * digunakan bila Apps Script memang tidak dikonfigurasi.
  */
 export async function uploadPhotoToDateFolder(options: UploadOptions): Promise<UploadResult> {
+  const cacheKey = options.idempotencyKey;
+  if (cacheKey) {
+    const cached = uploadCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const appsScriptUrl = process.env.APPS_SCRIPT_URL;
   if (appsScriptUrl) {
-    try {
-      return await uploadViaAppsScript(appsScriptUrl, options);
-    } catch (error) {
-      console.warn(
-        '[drive] Apps Script gagal, beralih ke Drive API:',
-        (error as Error).message,
-      );
-    }
+    const result = await uploadViaAppsScript(appsScriptUrl, options);
+    if (cacheKey) uploadCache.set(cacheKey, result);
+    return result;
   }
-  return uploadViaDriveApi(options);
+  const result = await uploadViaDriveApi(options);
+  if (cacheKey) uploadCache.set(cacheKey, result);
+  return result;
+}
+
+async function resolveUploadFolder(options: UploadOptions): Promise<string> {
+  let parent = getMainFolderId();
+  if (options.category) parent = await getOrCreateFolder(parent, CATEGORY_CONFIG[resolveCategory(options.category)].driveFolder);
+  parent = await getOrCreateFolder(parent, options.folderMonth);
+  parent = await getOrCreateFolder(parent, options.folderDate);
+  if (options.reportId) parent = await getOrCreateFolder(parent, options.reportId);
+  return parent;
 }
 
 async function uploadViaAppsScript(
@@ -172,9 +186,8 @@ async function uploadViaAppsScript(
         category: options.category || 'Kebakaran',
         date: options.folderDate,
         reportId: options.reportId || '',
-        folderId: getMainFolderId(),
-        folderBulan: options.folderMonth,
-        folderName: options.folderDate,
+        idempotencyKey: options.idempotencyKey || '',
+        folderId: await resolveUploadFolder(options),
         fileData: { content: base64, mimeType: options.mime, name: options.fileName },
       }),
       signal: controller.signal,
@@ -233,8 +246,10 @@ function describeDriveAuthError(error: unknown): never {
 
 async function uploadViaDriveApi(options: UploadOptions): Promise<UploadResult> {
   const rootId = getMainFolderId();
-  const monthId = await getOrCreateFolder(rootId, options.folderMonth);
+  const categoryId = options.category ? await getOrCreateFolder(rootId, CATEGORY_CONFIG[resolveCategory(options.category)].driveFolder) : rootId;
+  const monthId = await getOrCreateFolder(categoryId, options.folderMonth);
   const dateId = await getOrCreateFolder(monthId, options.folderDate);
+  const reportFolderId = options.reportId ? await getOrCreateFolder(dateId, options.reportId) : dateId;
 
   const comma = options.dataUrl.indexOf(',');
   const base64 = comma >= 0 ? options.dataUrl.slice(comma + 1) : options.dataUrl;
@@ -245,7 +260,7 @@ async function uploadViaDriveApi(options: UploadOptions): Promise<UploadResult> 
     const file = await withDriveFallback(drive =>
       drive.files.create({
         supportsAllDrives: true,
-        resource: { name: options.fileName, parents: [dateId] },
+        resource: { name: options.fileName, parents: [reportFolderId] },
         media: { mimeType: options.mime || 'image/jpeg', body: Readable.from(buffer) },
         fields: 'id',
       } as never),
@@ -260,8 +275,8 @@ async function uploadViaDriveApi(options: UploadOptions): Promise<UploadResult> 
   return {
     linkFile: `https://drive.google.com/file/d/${fileId}/view?usp=sharing`,
     fileId,
-    folderId: dateId,
-    folderUrl: `https://drive.google.com/drive/folders/${dateId}`, 
+    folderId: reportFolderId,
+    folderUrl: `https://drive.google.com/drive/folders/${reportFolderId}`,
     fileName: options.fileName,
     storage: 'next',
   };

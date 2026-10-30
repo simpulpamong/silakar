@@ -41,11 +41,18 @@ function isOAuthCredentialError(error: unknown): boolean {
 /**
  * Autentikasi Google.
  *
- * Prioritaskan OAuth2 (refresh token) karena service account tidak punya kuota
- * penyimpanan Drive. Fallback ke service account untuk instalasi lokal.
+ * Gunakan service account sebagai autentikasi utama agar upload cepat dan stabil.
+ * OAuth hanya menjadi fallback jika service account tidak dikonfigurasi.
  */
 function resolveAuth(): GoogleAuthClient {
   if (cachedAuth) return cachedAuth;
+
+  const serviceAccount = createServiceAccountAuth();
+  if (serviceAccount) {
+    cachedAuth = serviceAccount;
+    cachedAuthMode = 'service-account';
+    return cachedAuth;
+  }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -59,7 +66,6 @@ function resolveAuth(): GoogleAuthClient {
     return cachedAuth;
   }
 
-  const serviceAccount = createServiceAccountAuth();
   if (!serviceAccount) {
     throw new Error(
       'Kredensial Google belum dikonfigurasi. Isi GOOGLE_CLIENT_ID/SECRET/REFRESH_TOKEN atau GOOGLE_SERVICE_ACCOUNT_JSON.',

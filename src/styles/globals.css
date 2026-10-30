@@ -283,38 +283,6 @@ svg {
     radial-gradient(ellipse 60% 40% at 85% 110%, rgba(217, 154, 43, 0.06), transparent);
 }
 
-/* Latar batik — dipakai bersama oleh menu utama dan seluruh halaman
-   kategori laporan (lihat components/BatikBackdrop.tsx). Repetisi motif
-   `pointer-events: none` supaya tidak pernah menghalangi klik pengguna. */
-.batik-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.batik-backdrop-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: url("/assets/batik-ornament.svg");
-  background-repeat: repeat;
-  background-size: 420px auto;
-  /* Ornamen asli berwarna hijau tua. Di mode gelap warnanya nyaris
-     menghilang di atas latar biru-abang, jadi dibalik menjadi putih
-     supaya tekstur batik tetap terbaca sebagai pahatan, bukan noise. */
-  filter: brightness(0) invert(1);
-  opacity: 0.05;
-}
-
-.batik-backdrop-wash {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 42% 38% at 0% 0%, rgba(31, 78, 60, 0.035), transparent 72%),
-    radial-gradient(ellipse 40% 36% at 100% 100%, rgba(184, 131, 42, 0.03), transparent 72%);
-}
-
 .landing-header {
   position: relative;
   z-index: 1;
@@ -3253,6 +3221,18 @@ svg {
   gap: 9px;
 }
 
+.set-card + .set-group {
+  margin-top: 6px;
+}
+
+.set-group .btn-ghost {
+  align-self: flex-start;
+  min-height: 36px;
+  margin: 8px 0 4px;
+  padding: 8px 11px;
+  font-size: 0.68rem;
+}
+
 .set-collapse {
   display: flex;
   align-items: center;
@@ -3307,15 +3287,15 @@ svg {
 }
 
 .collapse-body.open > * {
-  padding: 12px 0 2px;
+  padding: 4px 0 2px;
 }
 
 .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 13px;
+  gap: 10px;
+  padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--card);
@@ -3323,7 +3303,7 @@ svg {
 }
 
 .toggle-row + .toggle-row {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .toggle-info {
@@ -3349,7 +3329,7 @@ svg {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .toggle-text strong {
@@ -3360,7 +3340,7 @@ svg {
 .toggle-text small {
   color: var(--muted);
   font-size: 0.66rem;
-  line-height: 1.45;
+  line-height: 1.3;
 }
 
 .switch {
@@ -3878,8 +3858,13 @@ svg {
   }
 
   .sheet {
+    width: 100%;
     max-height: 92dvh;
     border-radius: 20px 20px 0 0;
+  }
+
+  .sheet-body {
+    overscroll-behavior-y: contain;
   }
 
   /* Di layar sempit bar aksi penuh kiri-kanan: tombol hapus & kirim
@@ -3902,6 +3887,52 @@ svg {
 }
 
 @media (max-width: 430px) {
+  .sheet-head {
+    padding: 12px 14px;
+  }
+
+  .sheet-body {
+    gap: 12px;
+    padding: 14px 14px calc(16px + var(--safe-bottom));
+  }
+
+  .set-card + .set-group {
+    margin-top: 10px;
+  }
+
+  .set-group .btn-ghost {
+    min-height: 34px;
+    margin: 7px 0 3px;
+    padding: 7px 10px;
+  }
+
+  .set-collapse {
+    min-height: 46px;
+    padding: 11px 12px;
+  }
+
+  .toggle-row {
+    align-items: flex-start;
+    padding: 11px;
+  }
+
+  .toggle-text small {
+    max-width: 28ch;
+  }
+
+  .info-list > div {
+    align-items: flex-start;
+  }
+
+  .info-list dd {
+    max-width: 62%;
+    overflow-wrap: anywhere;
+  }
+
+  .author {
+    align-items: flex-start;
+  }
+
   .landing {
     --pad-y: 20px;
   }
@@ -4031,18 +4062,6 @@ html.light-mode .landing {
   background:
     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.06), transparent),
     radial-gradient(ellipse 60% 40% at 85% 110%, rgba(180, 83, 9, 0.04), transparent);
-}
-
-html.light-mode .batik-backdrop-pattern {
-  /* Di mode terang warna asli (hijau tua) dipakai apa adanya. */
-  filter: none;
-  opacity: 0.08;
-}
-
-html.light-mode .batik-backdrop-wash {
-  background:
-    radial-gradient(ellipse 42% 38% at 0% 0%, rgba(31, 78, 60, 0.05), transparent 72%),
-    radial-gradient(ellipse 40% 36% at 100% 100%, rgba(184, 131, 42, 0.045), transparent 72%);
 }
 
 html.light-mode .landing-card {

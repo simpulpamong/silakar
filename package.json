@@ -2,7 +2,7 @@
   "name": "silakar",
   "version": "1.0.0",
   "private": true,
-  "description": "Sistem Laporan Kebakaran dan Non-Kebakaran Kabupaten Ponorogo",
+  "description": "Sistem Pelaporan Pemadam Kebakaran Kabupaten Ponorogo",
   "engines": {
     "node": "22.x"
   },

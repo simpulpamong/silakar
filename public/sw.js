@@ -20,7 +20,6 @@ const CACHE_NAME = 'silakar-v5.0.0';
 const OFFLINE_URL = '/';
 const PRECACHE = [
   '/assets/icon-512.png',
-  '/assets/batik-ornament.svg',
   '/assets/icon-full.webp',
   '/assets/kategori/kebakaran.webp',
   '/assets/kategori/odnk.webp',

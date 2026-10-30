@@ -6,7 +6,7 @@
 
 export const APP_NAME = 'SILAKAR';
 export const APP_VERSION = '1.0.0';
-export const APP_TAGLINE = 'Sistem Laporan Kebakaran dan Non-Kebakaran';
+export const APP_TAGLINE = 'Sistem Pelaporan Pemadam Kebakaran';
 export const APP_WILAYAH = 'Ponorogo, Jawa Timur';
 export const APP_CONTACT_WA = '6285159686554';
 
@@ -24,7 +24,7 @@ export const GPS_MAX_ACCURACY_M = 100;
 
 export const DEVELOPER_NAME = 'Ahmad Abdul Basith, S.Tr.I.P';
 export const DEVELOPER_ROLE = 'Pengembang';
-export const DEVELOPER_PHOTO = '/assets/icon-192.png';
+export const DEVELOPER_PHOTO = '/assets/basith.webp';
 
 /** Nama utama yang dicetak sebagai judul watermark foto, untuk semua kategori. */
 export const WATERMARK_BRAND = 'DAMKAR PONOROGO';
@@ -89,7 +89,7 @@ export function getCategoryByName(name: string): CategoryDef | undefined {
 }
 
 /** Batas jumlah foto per laporan. */
-export const MAX_PHOTOS = 10;
+export const MAX_PHOTOS = 20;
 
 /** Batas ukuran foto setelah diproses (KB). */
 export const MAX_PHOTO_KB = 400;
