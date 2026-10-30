@@ -94,6 +94,8 @@ async function uploadFoto(body: SilakarBody) {
 
   return ok({
     linkFile: result.linkFile,
+    fileId: result.fileId,
+    folderId: result.folderId,
     namaFile: result.fileName,
     folderUrl: result.folderUrl,
     noFoto: index,
@@ -119,11 +121,15 @@ async function submitLaporan(body: SilakarBody) {
   }
 
   const folderUrl = str(body.data?.folderUrl, 500);
+  const categoryCode = body.data?.kategori === 'odnk' ? 'ODNK' : 'KEBAKARAN';
+  const submitDate = new Date();
+  const dateCode = `${submitDate.getFullYear()}${String(submitDate.getMonth() + 1).padStart(2, '0')}${String(submitDate.getDate()).padStart(2, '0')}`;
+  const reportId = str(body.data?.reportId, 100) || `SLK-${categoryCode}-01/${String(submitDate.getDate()).padStart(2, '0')}${String(submitDate.getMonth() + 1).padStart(2, '0')}${submitDate.getFullYear()}`;
 
   await saveReportWithPhotos(
     { parsed, photos: links, folderUrl, kategori: body.data?.kategori, rawText: laporan },
     links.map(photo => ({
-      idLaporan: str(body.data?.reportId, 100),
+      idLaporan: reportId,
       kategori: body.data?.kategori,
       tanggal: parsed.tanggal,
       danru: parsed.namaDanru || parsed.danru || '-',
@@ -131,6 +137,11 @@ async function submitLaporan(body: SilakarBody) {
       source: photo.source || 'camera',
       meta: photo.meta,
       linkDrive: photo.link,
+      fileId: photo.fileId,
+      folderId: photo.folderId,
+      folderUrl: photo.folderUrl || folderUrl,
+      fallbackLat: parsed.latitude ? Number(parsed.latitude) : undefined,
+      fallbackLng: parsed.longitude ? Number(parsed.longitude) : undefined,
       ket: describePhoto(photo),
     })),
   );
@@ -201,6 +212,9 @@ function normalizePhotoLinks(value: unknown): PhotoLink[] {
         namaFile: str(record.namaFile, 200) || link.split('/').pop() || 'foto',
         source: str(record.source, 20) || 'camera',
         meta: (record.meta as PhotoLink['meta']) ?? null,
+        fileId: str(record.fileId, 200),
+        folderId: str(record.folderId, 200),
+        folderUrl: str(record.folderUrl, 500),
       });
     }
   }

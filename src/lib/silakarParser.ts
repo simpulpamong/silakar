@@ -19,7 +19,8 @@ export function cleanReportText(text: string): string {
     .replace(/[\*_~`]/g, '')
     .replace(/\r\n?/g, '\n')
     .replace(/\s*•\s*/g, '\n')
-    .replace(/\s+(?=\*(?:HARI|LOKASI|JARAK|ESTIMAS|PEMBERI|PELAPOR|PEMILIK|JUMLAH|LUAS|KORBAN|PENYEBAB|KRONOLOGI|TINDAKAN|KERUGIAN|RINCIAN|JUMLAH ARMADA|KENDALA|PERSONIL|DOKUMENTASI|YANG MELAPORKAN|TEMBUSAN)\b)/gi, '\n')
+    .replace(/\s+(?=\*?(?:HARI(?:\s+(?:DAN|,)?\s*TANGGAL)?|TANGGAL|LOKASI|ALAMAT|GPS|JARAK|ESTIMAS|PEMBERI|PELAPOR|PEMOHON|PEMILIK|OBJEK|JUMLAH|LUAS|KORBAN|PENYEBAB|KRONOLOGI|TINDAKAN|KERUGIAN|HARTA|BENDA|RINCIAN|KENDARAAN|ARMADA|KENDALA|PERSONIL|DOKUMENTASI|YANG MELAPORKAN|TEMBUSAN)\b)/gi, '\n')
+    .replace(/\s*\*?\s*(?=(?:HARI|TANGGAL|LOKASI|GPS|JARAK|ESTIMASI|PEMBERI|PELAPOR|PEMOHON|PEMILIK|OBJEK|JUMLAH|LUAS|KORBAN|PENYEBAB|KRONOLOGI|TINDAKAN|KERUGIAN|HARTA|BENDA|RINCIAN|KENDARAAN|ARMADA|KENDALA|PERSONIL|DOKUMENTASI|YANG MELAPORKAN|TEMBUSAN)\b)/gi, '\n')
     .replace(/\n{3,}/g, '\n\n').trim();
 }
 
@@ -61,11 +62,11 @@ export interface ParsedReport {
 
 export function parseReport(rawText: string): ParsedReport {
   const text = cleanReportText(rawText);
-  const tanggalMatch = /HARI\s*(?:DAN\s+)?TANGGAL(?:\s+PELAKSANAANNYA|\s+PELAKSANAAN)?\s*[:：]?\s*[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*(\d{1,2}\s+[A-Za-zÀ-ÿ]+\s+\d{4})/i.exec(text);
+  const tanggalMatch = /(?:HARI\s*(?:DAN\s+)?TANGGAL|TANGGAL(?:\s+PELAKSANAAN(?:NYA)?)?)\s*[:：]?\s*(?:[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*)?(\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember|[A-Za-zÀ-ÿ]+)\s+\d{4}|\d{1,2}[-/]\d{1,2}[-/]\d{4})/i.exec(text);
   const tanggalFull = tanggalMatch?.[1] || first(text, [/(?:^|\n)\s*Tanggal\s*[:：]?\s*([^\n]+)/i]);
-  const dayFromDate = first(text, [/HARI\s*(?:DAN\s+)?TANGGAL[^:：]*[:：]?\s*([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?)/i]) || first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
-  const lokasi = section(text, ['LOKASI', 'ALAMAT'], ['GPS', 'JARAK TEMPUH', 'ESTIMASI WAKTU', 'PEMBERI INFORMASI', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN KEGIATAN']);
-  const personil = section(text, ['PERSONIL(?:\s+YANG\s+TERLIBAT)?'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN', 'KENDALA']);
+  const dayFromDate = first(text, [/(?:HARI\s*(?:DAN\s+)?TANGGAL|HARI)[^\n]*\n\s*([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?)/i],) || first(text, [/\b([A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?)\s*,?\s*\d{1,2}\s+(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+\d{4}/i]) || first(tanggalFull, [/^([A-Za-zÀ-ÿ]+)/]);
+  const lokasi = section(text, ['LOKASI', 'ALAMAT', 'LOKASI KEJADIAN'], ['GPS', 'JARAK TEMPUH', 'ESTIMASI WAKTU', 'PEMBERI INFORMASI', 'PELAPOR', 'PEMOHON', 'PEMILIK', 'JUMLAH PENGHUNI', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'RINCIAN KEGIATAN']);
+  const personil = section(text, ['PERSONIL\s+YANG\s+TERLIBAT', 'PERSONIL'], ['PELAKSANAAN', 'DOKUMENTASI', 'YANG MELAPORKAN', 'TEMBUSAN', 'DEMIKIAN']);
   const regu = first(text, [
     /Regu\s+([A-Z])\s+Damkar/i,
     /Komandan\s+Regu\s+([A-Z])/i,
@@ -75,13 +76,13 @@ export function parseReport(rawText: string): ParsedReport {
     /YANG\s+MELAPORKAN\s*[:：]?\s*_*\s*([A-Za-zÀ-ÿ .,'-]+?)\s*_?\s*Komandan\s+Regu/i,
     /\*?([A-ZÀ-Ý][A-ZÀ-Ý .,'-]{2,})\*?\s*Komandan\s+Regu/i,
   ]);
-  const identitas = section(text, ['OBJEK', 'PEMILIK(?:\s+NYA)?', 'IDENTITAS(?:\s*/\s*NAMA)?', 'PELAPOR(?:\s*/\s*PEMOHON)?'], ['JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'KERUGIAN', 'RINCIAN', 'PERSONIL']);
-  const stop = ['JARAK TEMPUH', 'ESTIMASI WAKTU PERJALANAN', 'PEMBERI INFORMASI', 'PELAPOR / PEMOHON', 'PELAPOR', 'PEMILIK', 'JUMLAH PENGHUNI RUMAH', 'JUMLAH PENGHUNI', 'LUAS AREA', 'AREAL YANG TERBAKAR', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'PERKIRAAN KERUGIAN', 'KERUGIAN', 'PERKIRAAN HARTA BENDA', 'HARTA', 'TINDAKAN', 'RINCIAN KEGIATAN', 'JUMLAH UNIT KENDARAAN', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
+  const identitas = section(text, ['OBJEK', 'JENIS KEJADIAN', 'PEMILIK(?:\s+NYA)?', 'IDENTITAS(?:\s*/\s*NAMA)?', 'PELAPOR(?:\s*/\s*PEMOHON)?'], ['JUMLAH', 'LUAS', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'TINDAKAN', 'KERUGIAN', 'RINCIAN', 'PERSONIL']);
+  const stop = ['JARAK TEMPUH', 'ESTIMASI WAKTU PERJALANAN', 'PEMBERI INFORMASI', 'PELAPOR / PEMOHON', 'PELAPOR', 'PEMOHON', 'PEMILIK', 'JUMLAH PENGHUNI RUMAH', 'JUMLAH PENGHUNI', 'LUAS AREA', 'AREAL YANG TERBAKAR', 'KORBAN', 'PENYEBAB', 'KRONOLOGI', 'PERKIRAAN KERUGIAN', 'KERUGIAN', 'PERKIRAAN HARTA BENDA', 'HARTA', 'TINDAKAN', 'RINCIAN KEGIATAN', 'JUMLAH UNIT KENDARAAN', 'JUMLAH ARMADA', 'PERSONIL', 'KENDALA', 'DOKUMENTASI', 'DEMIKIAN', 'YANG MELAPORKAN'];
   const parsed: ParsedReport = {
     nomorSpt: first(text, [/Nomor\s*SPT\s*[:：]?\s*([^\n]+)/i]), lokasi, hari: normalizeDay(dayFromDate || first(text, [/\bHari\b\s*[:：]?\s*([A-Za-zÀ-ÿ]+)/i])),
     tanggal: tanggalFull.replace(/^[A-Za-zÀ-ÿ]+(?:['’][A-Za-zÀ-ÿ]+)?\s*,?\s*/i, '').trim(), identitas,
-    objek: section(text, ['OBJEK'], stop), latitude: first(text, [/GPS\s*([-+]?\d+(?:\.\d+)?)\s*S/i]), longitude: first(text, [/GPS[^\n,]*,\s*([-+]?\d+(?:\.\d+)?)\s*E/i]), googleMaps: '',
-    pelapor: section(text, ['PEMBERI INFORMASI\s*\(\s*PELAPOR\s*/\s*PEMOHON\s*\)', 'PELAPOR\s*/\s*PEMOHON', 'PELAPOR'], stop), pemilik: section(text, ['PEMILIK'], stop),
+    objek: section(text, ['OBJEK'], stop), latitude: first(text, [/GPS\s*(?:\n\s*)?([-+]?\d+(?:\.\d+)?)(?:\s*S)?\s*[,\s]+/i]), longitude: first(text, [/GPS\s*(?:\n\s*)?[-+]?\d+(?:\.\d+)?(?:\s*S)?\s*[,\s]+([-+]?\d+(?:\.\d+)?)/i]), googleMaps: '',
+    pelapor: section(text, ['PEMBERI INFORMASI\s*\(\s*PELAPOR\s*/\s*PEMOHON\s*\)', 'PEMBERI INFORMASI', 'PELAPOR\s*/\s*PEMOHON', 'PELAPOR', 'PEMOHON'], stop), pemilik: section(text, ['PEMILIK'], stop),
     penghuni: section(text, ['JUMLAH PENGHUNI RUMAH YANG TERDAMPAK', 'JUMLAH PENGHUNI'], stop), korban: section(text, ['KORBAN'], stop),
     penyebab: section(text, ['PENYEBAB'], stop), kronologi: section(text, ['KRONOLOGI'], stop),
     tindakan: section(text, ['TINDAKAN'], stop), kerugian: section(text, ['PERKIRAAN KERUGIAN', 'KERUGIAN'], stop),
@@ -93,10 +94,24 @@ export function parseReport(rawText: string): ParsedReport {
     kendala: section(text, ['KENDALA'], stop), rincianKegiatan: section(text, ['RINCIAN KEGIATAN'], stop),
     keterangan: section(text, ['KRONOLOGI'], ['PERKIRAAN KERUGIAN', 'TINDAKAN', 'RINCIAN KEGIATAN', 'DOKUMENTASI']), missing: [],
   };
-  parsed.pelapor = parsed.pelapor.replace(/^.*?\b(?:PELAPOR\s*\/\s*PEMOHON|PEMOHON)\s*[:：]?\s*/i, '').trim();
-  parsed.personil = parsed.personil.replace(/^.*?\bPERSONIL(?:\s+YANG\s+TERLIBAT)?\s*[:：]?\s*/i, '').trim();
+  parsed.pelapor = parsed.pelapor.replace(/^.*?(?:PEMBERI\s+INFORMASI\s*)?(?:\(\s*)?(?:PELAPOR\s*\/\s*PEMOHON|PELAPOR|PEMOHON)(?:\s*\))?\s*[:：]?\s*/i, '').replace(/^[\s.:-]+/, '').trim();
+  parsed.personil = parsed.personil.replace(/^.*?\bPERSONIL(?:\s+YANG\s+TERLIBAT)?\s*[:：]?\s*/i, '').replace(/^[\s.:-]+/, '').trim();
+  parsed.pelapor = parsed.pelapor.replace(/^[\s./:-]+|[\s.]+$/g, '').trim();
+  parsed.pemilik = parsed.pemilik.replace(/^[\s./:-]+|[\s.]+$/g, '').trim();
+  parsed.penghuni = parsed.penghuni.replace(/^[\s./:-]+|[\s.]+$/g, '').trim();
+  parsed.personil = parsed.personil.replace(/^[\s./:-]+|[\s.]+$/g, '').trim();
   parsed.armada = parsed.armada.replace(/^.*?\bJUMLAH\s+UNIT\s+KENDARAK?AN\s+YANG\s+DIGUNAKAN\s*[:：]?\s*/i, '').trim();
   parsed.waktuKembali = parsed.waktuKembali.replace(/^.*?\bDI\s+MAKO\s*[:：]?\s*/i, '').trim();
+  const normalizeTime = (value: string) => {
+    const match = value.match(/(\d{1,2})\s*[.:]\s*(\d{1,2})/);
+    return match ? `${match[1].padStart(2, '0')}.${match[2].padStart(2, '0')} WIB` : value.replace(/\s+/g, ' ').trim();
+  };
+  parsed.waktuLaporan = normalizeTime(parsed.waktuLaporan);
+  parsed.waktuBerangkat = normalizeTime(parsed.waktuBerangkat);
+  parsed.waktuTiba = normalizeTime(parsed.waktuTiba);
+  parsed.waktuMulai = normalizeTime(parsed.waktuMulai);
+  parsed.waktuSelesai = normalizeTime(parsed.waktuSelesai);
+  parsed.waktuKembali = normalizeTime(parsed.waktuKembali);
   parsed.googleMaps = parsed.latitude && parsed.longitude ? `https://www.google.com/maps?q=${parsed.latitude},${parsed.longitude}` : '';
   if (!parsed.pelapor && parsed.identitas) parsed.pelapor = parsed.identitas;
   if (!parsed.identitas && parsed.objek) parsed.identitas = parsed.objek;

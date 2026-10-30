@@ -108,6 +108,8 @@ export function getOrCreateFolder(parentId: string, name: string): Promise<strin
 
 export interface UploadResult {
   linkFile: string;
+  fileId: string;
+  folderId: string;
   folderUrl: string;
   fileName: string;
   storage: 'apps-script' | 'next';
@@ -192,6 +194,8 @@ async function uploadViaAppsScript(
       url?: string;
       linkFile?: string;
       folderUrl?: string;
+      fileId?: string;
+      folderId?: string;
     };
 
     if (result?.success === false) {
@@ -203,7 +207,7 @@ async function uploadViaAppsScript(
     if (!linkFile) throw new Error('Apps Script tidak mengembalikan URL berkas.');
     if (!folderUrl) throw new Error('Apps Script tidak mengembalikan URL folder.');
 
-    return { linkFile, folderUrl, fileName: options.fileName, storage: 'apps-script' };
+    return { linkFile, fileId: result.fileId || '', folderId: result.folderId || '', folderUrl, fileName: options.fileName, storage: 'apps-script' };
   } finally {
     clearTimeout(timer);
   }
@@ -255,7 +259,9 @@ async function uploadViaDriveApi(options: UploadOptions): Promise<UploadResult> 
 
   return {
     linkFile: `https://drive.google.com/file/d/${fileId}/view?usp=sharing`,
-    folderUrl: `https://drive.google.com/drive/folders/${dateId}`,
+    fileId,
+    folderId: dateId,
+    folderUrl: `https://drive.google.com/drive/folders/${dateId}`, 
     fileName: options.fileName,
     storage: 'next',
   };

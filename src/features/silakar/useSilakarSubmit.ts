@@ -40,6 +40,8 @@ export interface DrivePhotoLink {
   source: 'camera' | 'gallery';
   meta: PhotoMetaPayload;
   folderUrl: string;
+  fileId: string;
+  folderId: string;
 }
 
 export function useSilakarSubmit() {
@@ -95,7 +97,7 @@ export function useSilakarSubmit() {
         async (index, photo) => {
           const response = await withRetry(
             () =>
-              apiFetch<{ linkFile: string; namaFile: string; folderUrl: string }>('/api/silakar', {
+              apiFetch<{ linkFile: string; fileId: string; folderId: string; namaFile: string; folderUrl: string }>('/api/silakar', {
                 method: 'POST',
                 timeout: adaptiveTimeout(80_000),
                 body: {
@@ -124,6 +126,8 @@ export function useSilakarSubmit() {
             source: photo.source,
             meta: metaOf(photo),
             folderUrl: response.folderUrl,
+            fileId: response.fileId,
+            folderId: response.folderId,
           } satisfies DrivePhotoLink;
         },
         Math.min(adaptiveConcurrency(4), 4),
@@ -148,11 +152,14 @@ export function useSilakarSubmit() {
               data: {
                 laporan: reportText,
                 kategori: scope === 'odnk' ? 'odnk' : 'kebakaran',
-                linkFoto: uploaded.map(({ link, namaFile, source, meta }) => ({
+                linkFoto: uploaded.map(({ link, namaFile, source, meta, fileId, folderId, folderUrl }) => ({
                   link,
                   namaFile,
                   source,
                   meta,
+                  fileId,
+                  folderId,
+                  folderUrl,
                 })),
                 folderUrl,
                 draftId: activeDraftId,

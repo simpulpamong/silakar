@@ -1,6 +1,7 @@
 import { getSpreadsheetId, withSheetsFallback } from './googleAuth';
 import { parseReport } from '../silakarParser';
 import { formatWib } from '../format';
+import { REPORT_HEADERS as CONTRACT_REPORT_HEADERS, PHOTO_HEADERS as CONTRACT_PHOTO_HEADERS } from './schema-contract';
 
 export const SHEET = {
   reports: { kebakaran: 'KEBAKARAN', odnk: 'ODNK' },
@@ -20,16 +21,8 @@ export type { ParsedReport } from '../silakarParser';
 /* ── Struktur baris ─────────────────────────────────────────────── */
 
 /** Canonical column order for both report tabs (KEBAKARAN and ODNK). */
-export const REPORT_HEADERS = [
-  'Waktu Submit', 'ID Laporan', 'Kategori', 'Tanggal Kejadian', 'Hari',
-  'Lokasi', 'Latitude', 'Longitude', 'Google Maps', 'Pelapor',
-  'Pemilik / Objek', 'Jumlah Penghuni', 'Korban', 'Penyebab', 'Kronologi',
-  'Tindakan', 'Kerugian', 'Harta Terselamatkan', 'Luas Area', 'Jarak Tempuh',
-  'Estimasi Perjalanan', 'Waktu Laporan', 'Waktu Berangkat', 'Waktu Tiba',
-  'Waktu Mulai', 'Waktu Selesai', 'Waktu Kembali', 'Armada', 'Personel',
-  'Kendala', 'Rincian Kegiatan', 'Narasi Asli', 'Folder Drive', 'Jumlah Foto',
-  'Status', 'Sumber',
-] as const;
+export const REPORT_HEADERS = CONTRACT_REPORT_HEADERS;
+export const PHOTO_HEADERS = CONTRACT_PHOTO_HEADERS;
 
 export interface PhotoMeta {
   hasGps?: boolean;
@@ -65,6 +58,11 @@ export interface PhotoRowInput {
   source: string;
   meta?: PhotoMeta | null;
   linkDrive: string;
+  fileId?: string;
+  folderId?: string;
+  folderUrl?: string;
+  fallbackLat?: number;
+  fallbackLng?: number;
   ket?: string;
   createdAt?: Date;
 }
@@ -74,6 +72,7 @@ export interface PhotoRowInput {
 /** Baris utama laporan di sheet INPUT. */
 export function buildReportRow(input: ReportRowInput): (string | number)[] {
   const { parsed, photos } = input;
+  const fallbackGps = parsed.latitude && parsed.longitude ? { lat: Number(parsed.latitude), lng: Number(parsed.longitude) } : null;
   // Selaraskan persis dengan REPORT_HEADERS di Apps Script (36 kolom).
   return [
     formatWib(input.createdAt ?? new Date()), parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
@@ -85,15 +84,16 @@ export function buildReportRow(input: ReportRowInput): (string | number)[] {
 /** Baris log detail foto di sheet "Detail Foto". */
 export function buildPhotoRow(options: PhotoRowInput): (string | number)[] {
   const meta = options.meta || {};
-  const hasCoordinates = typeof meta.lat === 'number' && typeof meta.lng === 'number';
+  const hasExifCoordinates = typeof meta.lat === 'number' && typeof meta.lng === 'number';
+  const hasCoordinates = hasExifCoordinates || Boolean(options.fallbackLat !== undefined && options.fallbackLng !== undefined);
   const mapsLink = hasCoordinates ? `https://www.google.com/maps?q=${meta.lat},${meta.lng}` : '-';
 
   // Must match Apps Script PHOTO_HEADERS (17 columns).
   return [
     formatWib(options.createdAt ?? new Date()), options.idLaporan || '', options.kategori === 'odnk' ? 'ODNK' : 'Kebakaran', options.tanggal || '-',
-    options.namaFile || '-', options.linkDrive || '', '', '',
-    hasCoordinates ? (meta.lat as number) : '-', hasCoordinates ? (meta.lng as number) : '-',
-    mapsLink, options.source === 'camera' ? 'KAMERA' : options.source === 'gallery' ? 'GALERI' : 'MOBILE',
+    options.namaFile || '-', options.linkDrive || '', options.fileId || '', options.folderUrl || '',
+    hasCoordinates ? (hasExifCoordinates ? (meta.lat as number) : options.fallbackLat!) : '-', hasCoordinates ? (hasExifCoordinates ? (meta.lng as number) : options.fallbackLng!) : '-',
+    hasCoordinates ? `https://www.google.com/maps?q=${hasExifCoordinates ? meta.lat : options.fallbackLat},${hasExifCoordinates ? meta.lng : options.fallbackLng}` : '-', options.source === 'camera' ? 'KAMERA' : options.source === 'gallery' ? 'GALERI' : 'MOBILE',
     hasCoordinates ? 'YA' : 'TIDAK', meta.datetime || '-', meta.address || '-',
     options.ket || '-', 'DITERIMA',
   ];
@@ -109,7 +109,7 @@ async function appendRows(sheetName: string, rows: (string | number)[][]): Promi
       sheets.spreadsheets.values.append({
         spreadsheetId,
         range: `'${sheetName.replace(/'/g, "''")}'!A1`,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         resource: { values: rows },
       } as never),
