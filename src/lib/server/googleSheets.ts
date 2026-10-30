@@ -41,6 +41,9 @@ export interface PhotoLink {
   namaFile: string;
   source?: string;
   meta?: PhotoMeta | null;
+  fileId?: string;
+  folderId?: string;
+  folderUrl?: string;
 }
 
 export interface ReportRowInput {
@@ -76,7 +79,6 @@ export interface PhotoRowInput {
 /** Baris utama laporan di sheet INPUT. */
 export function buildReportRow(input: ReportRowInput): (string | number)[] {
   const { parsed, photos } = input;
-  const fallbackGps = parsed.latitude && parsed.longitude ? { lat: Number(parsed.latitude), lng: Number(parsed.longitude) } : null;
   // Selaraskan persis dengan REPORT_HEADERS di Apps Script (36 kolom).
   return [
     formatWib(input.createdAt ?? new Date()), input.reportId || parsed.nomorSpt || '-', categoryKey(input.kategori) === 'odnk' ? 'ODNK' : 'Kebakaran',
@@ -90,8 +92,6 @@ export function buildPhotoRow(options: PhotoRowInput): (string | number)[] {
   const meta = options.meta || {};
   const hasExifCoordinates = typeof meta.lat === 'number' && typeof meta.lng === 'number';
   const hasCoordinates = hasExifCoordinates || Boolean(options.fallbackLat !== undefined && options.fallbackLng !== undefined);
-  const mapsLink = hasCoordinates ? `https://www.google.com/maps?q=${meta.lat},${meta.lng}` : '-';
-
   // Must match Apps Script PHOTO_HEADERS (17 columns).
   return [
     formatWib(options.createdAt ?? new Date()), options.idLaporan || '', options.kategori === 'odnk' ? 'ODNK' : 'Kebakaran', options.tanggal || '-',
@@ -138,7 +138,7 @@ async function ensureSheetStructure(): Promise<void> {
     for (const definition of values) {
       const sheetId = byTitle.get(definition.title);
       if (!sheetId) continue;
-      await sheets.spreadsheets.values.update({ spreadsheetId, range: `'${definition.title.replace(/'/g, "''")}'!A1`, valueInputOption: 'RAW', requestBody: { values: [definition.headers] } });
+      await sheets.spreadsheets.values.update({ spreadsheetId, range: `'${definition.title.replace(/'/g, "''")}'!A1`, valueInputOption: 'RAW', requestBody: { values: [Array.from(definition.headers)] } });
       await sheets.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests: [{ updateSheetProperties: { properties: { sheetId, title: definition.title, gridProperties: { frozenRowCount: 1 } }, fields: 'gridProperties.frozenRowCount' } }, { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.12, green: 0.31, blue: 0.47 }, textFormat: { bold: true, foregroundColor: { red: 1, green: 1, blue: 1 } } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } }] } });
     }
   });

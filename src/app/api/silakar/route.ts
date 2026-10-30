@@ -61,9 +61,6 @@ export async function POST(request: Request) {
 
 async function generateReportId(body: SilakarBody) {
   const categoryCode = body.data?.kategori === 'odnk' ? 'ODNK' : 'KEBAKARAN';
-  const now = new Date();
-  const dateCode = `${String(now.getDate()).padStart(2, '0')}${String(now.getMonth() + 1).padStart(2, '0')}${now.getFullYear()}`;
-  const prefix = `SLK-${categoryCode}-`;
   const appsScriptUrl = process.env.APPS_SCRIPT_URL;
   if (!appsScriptUrl) throw new ApiError('Layanan pembuat ID laporan belum dikonfigurasi.', 503, 'id_service_unavailable');
   const response = await fetch(appsScriptUrl, {
@@ -149,7 +146,6 @@ async function submitLaporan(body: SilakarBody) {
   const folderUrl = str(body.data?.folderUrl, 500);
   const categoryCode = body.data?.kategori === 'odnk' ? 'ODNK' : 'KEBAKARAN';
   const submitDate = new Date();
-  const dateCode = `${submitDate.getFullYear()}${String(submitDate.getMonth() + 1).padStart(2, '0')}${String(submitDate.getDate()).padStart(2, '0')}`;
   const reportId = str(body.data?.reportId, 100) || `SLK-${categoryCode}-01/${String(submitDate.getDate()).padStart(2, '0')}${String(submitDate.getMonth() + 1).padStart(2, '0')}${submitDate.getFullYear()}`;
 
   await saveReportWithPhotos(
